@@ -1,0 +1,21 @@
+{
+    "language": "Language",
+    "scales": "Scales",
+    "hide": "Hide",
+    "ghostMode": "Disable Interactions",
+    "newCharacter": "Add Character",
+    "settings": "Settings",
+    "quit": "Quit Desktop ENA",
+    "duplicate": "Duplicate",
+    "dismiss": "Dismiss",
+    "sit": "Sit",
+    "bounce": "Bounce",
+    "walk": "Walk",
+    "walk_1": "x1",
+    "walk_2": "x2",
+    "walk_3": "x4",
+    "walk_4": "x8",
+    "creep": "Creep",
+    "addAccessory": "Add Accessory",
+    "chaseCursor": "Chase cursor"
+}

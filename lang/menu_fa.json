@@ -1,0 +1,21 @@
+{
+    "language": "زبان",
+    "scales": "مقیاس",
+    "hide": "پنهان",
+    "ghostMode": "غیر فعال کردن تعامل",
+    "newCharacter": "کاراکتر جديد",
+    "settings": "تنظیمات",
+    "quit": "خروج",
+    "duplicate": "کپی",
+    "dismiss": "انصراف",
+    "sit": "شو",
+    "bounce": "تپش",
+    "walk": "شمار",
+    "walk_1": "x1",
+    "walk_2": "x2",
+    "walk_3": "x4",
+    "walk_4": "x8",
+    "creep": "گسسته",
+    "addAccessory": "افزودن آدیش",
+    "chaseCursor": "جنگی به موس"
+}

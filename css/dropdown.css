@@ -1,0 +1,83 @@
+.dropdown {
+    position: relative;
+}
+.dropup .dropdown-toggles {
+    padding: 6px 12px 6px 12px;
+}
+.dropup .dropdown-toggles:after {
+    content: "";
+    border-bottom: 0.3em solid;
+    border-left: 0.3em solid transparent;
+    border-right: 0.3em solid transparent;
+    border-top: 0;
+    display: inline-block;
+    margin-left: 0.255em;
+    vertical-align: 0.255em;
+}
+.dropdown-menu {
+    background-clip: padding-box;
+    background-color: #fff;
+    border: 1px solid rgb(0, 0, 0, .175);
+    border-radius: 3px;
+    font-size: 1rem;
+    list-style: none;
+    margin: 0;
+    padding: 0.5rem 0;
+    position: absolute;
+    z-index: 98;
+    display: none;
+}
+.dropdown-menu, .popover-body {
+    color: #444;
+}
+.dropdown>.dropdown-menu {
+    margin-top: 0.125rem;
+    top: 100%;
+}
+.dropup>.dropdown-menu {
+    margin-bottom: 0.125rem;
+}
+.dropup>.dropdown-menu {
+    bottom: 100%;
+    top: auto;
+}
+.dropdown-narrow {
+    min-width: 5.5rem;
+    text-align: center;
+}
+.dropdown-item {
+    background-color: transparent;
+    border: 0;
+    clear: both;
+    color: #212529;
+    display: block;
+    font-weight: 400;
+    padding: 0.25rem 1.5rem;
+    text-align: inherit;
+    white-space: nowrap;
+    width: 100%;
+}
+.dropdown-toggles.show + .dropdown-menu {
+    display: block;
+}
+.dropdown-item, .dropdown-item:active {
+    background-color: inherit;
+    color: inherit;
+}
+.dropdown-item-radio {
+    position: relative;
+}
+.dropdown-item-radio.checked:after {
+    background: #aaa;
+    border-radius: 3px;
+    content: "";
+    height: 20px;
+    left: 9px;
+    position: absolute;
+    width: 5px;
+}
+.dropdown-item:focus, .dropdown-item:hover {
+    background-color: #e9ecef;
+    color: #1e2125;
+    text-decoration: none;
+}

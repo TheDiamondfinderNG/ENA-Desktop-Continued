@@ -1,0 +1,21 @@
+{
+    "language": "Idioma",
+    "scales": "Escalas",
+    "hide": "Ocultar",
+    "ghostMode": "Desactivar interacciones",
+    "newCharacter": "Añadir Personaje",
+    "settings": "Ajustes",
+    "quit": "Cerrar Desktop ENA",
+    "duplicate": "Duplicar",
+    "dismiss": "Descartar",
+    "sit": "Sentarse",
+    "bounce": "Rebotar",
+    "walk": "Caminar",
+    "walk_1": "x1",
+    "walk_2": "x2",
+    "walk_3": "x4",
+    "walk_4": "x8",
+    "creep": "Arrastrarse",
+    "addAccessory": "Añadir Accesorio",
+    "chaseCursor": "Perseguir cursor"
+}

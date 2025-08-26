@@ -1,0 +1,21 @@
+{
+    "language": "語",
+    "scales": "大きさ",
+    "hide": "非表示",
+    "ghostMode": "対話の無効化",
+    "newCharacter": "キャラクターを追加します",
+    "settings": "設定",
+    "quit": "Desktop ENA を閉じます",
+    "duplicate": "複製する",
+    "dismiss": "解除",
+    "sit": "座る",
+    "bounce": "バウンド",
+    "walk": "歩く",
+    "walk_1": "x1",
+    "walk_2": "x2",
+    "walk_3": "x3 + 1",
+    "walk_4": "x8",
+    "creep": "クリープ",
+    "addAccessory": "アクセサリーを追加する",
+    "chaseCursor": "カーソルを追いかける"
+}

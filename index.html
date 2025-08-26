@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desktop ENA</title>
+    <style>
+        body {
+            width: auto;
+            height: auto;
+            overflow: hidden;
+            margin: 0 !important;
+            padding: 0 !important;
+            outline: none !important;
+            -webkit-app-region: drag;
+        }
+        canvas {
+            pointer-events: none;
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+        }
+    </style>
+</head>
+<body>
+    <script src="image-utils.js"></script>
+    <script src="animate-utils.js"></script>
+    <script>
+        let characterName = null;
+        let options = {};
+        let imgPath = null;
+        let isCustom = false;
+
+        function getRandomNumber() {
+            return Math.random() < 0.5 ? 1 : -1;
+        }
+        window.api.send('channel1', '');
+
+        window.api.receive('channel1', (data) => {
+            if (animateUtils.findCharacter(characterName).activeAnimation != data) {
+                animateUtils.changeAnimation(characterName, data);
+            }
+        });
+
+        window.api.receive('setCharacterState', (states) => {
+            options = JSON.parse(states);
+        });
+        
+        window.api.receive('setImagePath', (path) => {
+            imgPath = path;
+        });
+
+        window.api.receive('setIsCustom', (bool) => {
+            isCustom = bool;
+        });
+
+        window.api.receive('changeScale', (scale, size) => {
+            animateUtils.scale = scale;
+            animateUtils.canvas.width = size.frameWidth * scale;
+            animateUtils.canvas.height = size.frameHeight * scale;
+        });
+
+        window.api.receive('changeBackground', (name, colors) => {
+            animateUtils.setBackground(name, colors);
+        });
+
+        window.api.receive('changeDarkness', (percent) => {
+            animateUtils.setDarkness(percent);
+        });
+
+        window.api.receive('changeColor', (colors) => {
+            animateUtils.setRecolor(colors);
+        });
+
+        window.api.receive('changeColor2', (colors) => {
+            animateUtils.setRecolor2(colors);
+        });
+
+        window.api.receive('changeAccessory', (name) => {
+            if (name != null) {
+                animateUtils.setAccessory(name);
+            }
+        });
+
+        window.api.receive('changeSprite', (sprite, blink) => {
+            const name = sprite.replace(/(^img\/character\/)|(_default\.png$)/g, '').toLowerCase();
+            let spritesheet = {
+                character: (isCustom ? imgPath + '\\' + sprite : 'img/character/' + sprite),
+                eyes: (isCustom ? imgPath + '\\' + blink : 'img/character/' + blink),
+                ena: 'img/accessory/Ena_accessory.png',
+                bbq_ena: 'img/accessory/BBQEna_accessory.png',
+                shepherd: 'img/accessory/Shepherd_accessory.png',
+                margo: 'img/accessory/Margo_accessory.png',
+                ula: 'img/accessory/Ula_accessory.png',
+                hg_dog: 'img/accessory/HourglassDog_accessory.png',
+                turron: 'img/accessory/Turron_accessory.png',
+                pumpkin: 'img/accessory/Pumpkin_accessory.png',
+                ena_bunny: 'img/accessory/EnaBunny_accessory.png',
+                clown_dog: 'img/accessory/ClownDog_accessory.png',
+                dog_grim: 'img/accessory/DogGrim_accessory.png',
+                margo_kitty: 'img/accessory/MargoKitty_accessory.png',
+                lollipop: 'img/accessory/Lollipop_accessory.png',
+                eve_hat: 'img/accessory/pt_eveHat_accessory.png',
+                bbq_bunny: 'img/accessory/EnaBunnyBBQ_accessory.png',
+                phone: 'img/accessory/phone_accessory.png',
+                leek: 'img/accessory/leek_accessory.png',
+                baguette: 'img/accessory/baguette_accessory.png',
+                pearto: 'img/accessory/pearto_accessory.png'
+            };
+            
+            // Sprites and more
+            imageUtils.loadImages(spritesheet).then((imgs) => {
+                const name = sprite.replace(/(^img\/character\/)|(_default\.png$)/g, '').toLowerCase();
+                characterName = name;
+
+                animateUtils.createAnimation('idle-l', 1, 0, true, [
+                    [0, 0]
+                ]);
+                animateUtils.createAnimation('idle-r', 1, 1, true, [
+                    [1, 0]
+                ]);
+                animateUtils.createAnimation('walk-l', 4, 0, true, [
+                    [2, 0], [3, 0], [4, 0], [3, 0]
+                ]);
+                animateUtils.createAnimation('walk-r', 4, 1, true, [
+                    [5, 0], [6, 0], [7, 0], [6, 0]
+                ]);
+                animateUtils.createAnimation('dangle-l', 4, 0, true, [
+                    [0, 1], [1, 1], [2, 1], [1, 1]
+                ]);
+                animateUtils.createAnimation('dangle-r', 4, 1, true, [
+                    [3, 1], [4, 1], [5, 1], [4, 1]
+                ]);
+                // drag animations have to use the opposite direction for the blink to work correctly
+                animateUtils.createAnimation('drag-l', 4, 1, false, [
+                    [9, 1], [9, 1],
+                ]);
+                animateUtils.createAnimation('drag-r', 4, 0, false, [
+                    [7, 1], [7, 1],
+                ]);
+                animateUtils.createAnimation('sit-l', 4, 0, true, [
+                    [8, 0]
+                ]);
+                animateUtils.createAnimation('sit-r', 4, 1, true, [
+                    [9, 0]
+                ]);
+                animateUtils.createAnimation('init-fall-l', 6, 0, false, [
+                    [0, 2], [1, 2], [2, 2], 
+                ]);
+                animateUtils.createAnimation('init-fall-r', 6, 1, false, [
+                    [3, 2], [4, 2], [5, 2], 
+                ]);
+                animateUtils.createAnimation('blinking', 10, 0, true, [
+                    [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [1, 0], [1, 0]
+                ]);
+                const direction = getRandomNumber() < 0 ? 'l' : 'r';
+                const frameWidth = imgs.character.width / 10;
+                const frameHeight = imgs.character.height / 4;
+                console.log(options);
+
+                animateUtils.createCharacter(imgs.character, imgs.eyes, name, 0, 0, frameWidth, frameHeight, 'idle-' + direction, options, isCustom, 'db/');
+                var acc = {
+                    ena: imgs.ena,
+                    bbq_ena: imgs.bbq_ena,
+                    shepherd: imgs.shepherd,
+                    margo: imgs.margo,
+                    ula: imgs.ula,
+                    hg_dog: imgs.hg_dog,
+                    turron: imgs.turron,
+                    pumpkin: imgs.pumpkin,
+                    ena_bunny: imgs.ena_bunny,
+                    clown_dog: imgs.clown_dog,
+                    dog_grim: imgs.dog_grim,
+                    margo_kitty: imgs.margo_kitty,
+                    lollipop: imgs.lollipop,
+                    eve_hat: imgs.eve_hat,
+                    bbq_bunny: imgs.bbq_bunny,
+                    phone: imgs.phone,
+                    leek: imgs.leek,
+                    baguette: imgs.baguette,
+                    pearto: imgs.pearto
+                };
+                animateUtils.saveAccessory(acc);
+                animateUtils.initCanvas('body', frameWidth * animateUtils.scale, frameHeight * animateUtils.scale, 'shimeji');
+                animateUtils.onInit();
+                window.api.send('direction', direction);
+            }).catch((error) => {
+                console.error(`Error al cargar las imágenes: ${error}`);
+            });
+        });
+    </script>
+</body>
+</html>
