@@ -30,8 +30,9 @@ let store_characters = {};
 let translations = require(`./lang/menu_${currentLanguage}.json`);
 let windows = [];
 let lastRoofY = 0;
+let lastFloorY = Infinity;
 let lastLeftWall = 0;
-let lastRightWall = 99999999;
+let lastRightWall = Infinity;
 let settings;
 let intervals = {};
 let winIsFullscreen = false;
@@ -654,6 +655,7 @@ function getDisplaysWidth() {
 }
 
 function setCollision(win) {
+    // If window is removed or being dragged, disable collision
     if (win == undefined || (characterStates[win.id] && characterStates[win.id].isDragging)) { return; }
 
     // let display = screen.getPrimaryDisplay(); // deprecated
@@ -668,7 +670,7 @@ function setCollision(win) {
         const bounds = getDisplayForPosition(x, y);
 
         // Bouncing
-        if (x + winWidth > lastRightWall && !bounds) { // Right
+        if (x + winWidth > lastRightWall && !getDisplayForPosition(x + winWidth, y)) { // Right
             characterStates[win.id].v_speed_x *= -1;
             characterStates[win.id].direction = 'left';
             characterStates[win.id].dx = (-1 * characterStates[win.id].scale * characterStates[win.id].speed);
@@ -689,21 +691,15 @@ function setCollision(win) {
 
         if (bounds) {
             lastRoofY = bounds.bounds.y
+            lastFloorY = bounds.bounds.y + (!winIsFullscreen ? bounds.workAreaSize.height : bounds.size.height)
             lastLeftWall = bounds.bounds.x
             lastRightWall = bounds.bounds.x + bounds.bounds.width
-
-            if (y + winHeight > (!winIsFullscreen ? bounds.workAreaSize.height : bounds.size.height)) { // Bottom
-                characterStates[win.id].v_speed_y = 0;
-                win.setPosition(x, (!winIsFullscreen ? bounds.workAreaSize.height : bounds.size.height) - winHeight);
-                characterStates[win.id].isFalling = false;
-            }
-        } else {
-            if (y + winHeight > (!winIsFullscreen ? height : displays[0].size.height)) { // Bottom
-                characterStates[win.id].v_speed_y = 0;
-                win.setPosition(x, (!winIsFullscreen ? height : displays[0].size.height) - winHeight);
-                characterStates[win.id].isFalling = false;
-            }
-            
+        } 
+        
+        if (y + winHeight > lastFloorY) { // Bottom
+            characterStates[win.id].v_speed_y = 0;
+            win.setPosition(x, lastFloorY);
+            characterStates[win.id].isFalling = false;
         }
 
         if (y < lastRoofY) { // Top
@@ -776,7 +772,7 @@ function startGravity(win) {
                 shimejiStates.v_speed_x = 0;
                 shimejiStates.v_speed_y = 0;
                 // Si el personaje está en el suelo
-                win.setPosition(x + shimejiStates.dx, (!winIsFullscreen ? (displays[0].workAreaSize.height - winHeight) : (displays[0].size.height - winHeight)));
+                win.setPosition(x + shimejiStates.dx, (lastFloorY - winHeight));
                 shimejiStates.isFalling = false;
                 // Actualizamos la animación de dangling o falling a idle o walk
                 if (!shimejiStates.isSitting) {
