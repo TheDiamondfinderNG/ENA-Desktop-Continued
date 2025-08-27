@@ -38,9 +38,6 @@ let winIsFullscreen = false;
 let contextMenu = null;
 // initMenu
 const WM_INITMENU = 0x0116;
-
-console.log('\x1b[36m%s\x1b[0m', 'Desktop ENA developed by TanyaHastur, all rights reserved.');
-
 ipcMain.setMaxListeners(10);
 
 async function savePreferences() {
@@ -687,8 +684,6 @@ function setCollision(win) {
         }
 
         if (bounds) {
-            console.log("\x1b[1;31m%s\x1b[0m",bounds)
-
             lastRoofY = bounds.bounds.y
             lastLeftWall = bounds.bounds.x
             lastRightWall = bounds.bounds.x + bounds.bounds.width
@@ -747,7 +742,6 @@ function setCollision(win) {
         if (y + winHeight > (!winIsFullscreen ? height : displays.size.height)) { // Bottom
             characterStates[win.id].v_speed_y = 0;
             win.setPosition(x, (!winIsFullscreen ? height : displays.size.height) - winHeight);
-            console.log("Condition 5: FALSE")
             characterStates[win.id].isFalling = false;
         }
         if (y < 0) { // Top
