@@ -40,6 +40,10 @@ let contextMenu = null;
 const WM_INITMENU = 0x0116;
 ipcMain.setMaxListeners(10);
 
+
+console.log('\x1b[36m%s\x1b[0m', 'Desktop ENA developed by TanyaHastur, all rights reserved.');
+
+
 async function savePreferences() {
     const preferences = {
         language: currentLanguage,
