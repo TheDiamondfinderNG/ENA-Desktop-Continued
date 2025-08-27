@@ -655,8 +655,9 @@ function setCollision(win) {
     // let display = screen.getPrimaryDisplay(); // deprecated
     const displays = screen.getAllDisplays();
     let [x, y] = win.getPosition();
+    const bounds = getDisplayForPosition(x, y)
     let [winWidth, winHeight] = win.getSize();
-    let { width, height } = displays[0].workAreaSize;
+    let { width, height } = (bounds ?? displays[0]).workAreaSize;
 
     if (displays.length > 1) {
         // Bouncing
@@ -693,9 +694,9 @@ function setCollision(win) {
                 characterStates[win.id].isFalling = false;
             }
         }
-        if (y < 0) { // Top
+        if (y < bounds.y) { // Top
             characterStates[win.id].v_speed_y = 0;
-            win.setPosition(x, 0);
+            win.setPosition(x, bounds.y);
         }
     } else {
         if (characterStates[win.id].isFalling && characterStates[win.id].isBouncing) {
@@ -755,14 +756,14 @@ function startGravity(win) {
         const bounds = getDisplayForPosition(x, y);
         if (bounds) {
             // Aplica el efecto de gravedad
-            if (y + winHeight < (!winIsFullscreen ? bounds.workAreaSize.height : bounds.size.height)) {
+            if (y + winHeight < (!winIsFullscreen ? (bounds.workAreaSize.height+bounds.workArea.y) : (bounds.size.height + bounds.bounds.y))) {
                 win.setPosition(x, y + shimejiStates.dy);
                 shimejiStates.isFalling = true;
             } else {
                 shimejiStates.v_speed_x = 0;
                 shimejiStates.v_speed_y = 0;
                 // Si el personaje está en el suelo
-                win.setPosition(x + shimejiStates.dx, (!winIsFullscreen ? (bounds.workAreaSize.height - winHeight) : (bounds.size.height - winHeight)));
+                win.setPosition(x + shimejiStates.dx, (!winIsFullscreen ? (displays[0].workAreaSize.height - winHeight) : (displays[0].size.height - winHeight)));
                 shimejiStates.isFalling = false;
                 // Actualizamos la animación de dangling o falling a idle o walk
                 if (!shimejiStates.isSitting) {
