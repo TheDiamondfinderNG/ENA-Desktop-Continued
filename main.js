@@ -29,6 +29,9 @@ let allowCustoms = false;
 let store_characters = {};
 let translations = require(`./lang/menu_${currentLanguage}.json`);
 let windows = [];
+let lastRoofY = 0;
+let lastLeftWall = 0;
+let lastRightWall = 99999999;
 let settings;
 let intervals = {};
 let winIsFullscreen = false;
@@ -660,28 +663,36 @@ function setCollision(win) {
     let { width, height } = (bounds ?? displays[0]).workAreaSize;
 
     if (displays.length > 1) {
-        // Bouncing
-        if (x + winWidth > getDisplaysWidth()) { // Right
-            characterStates[win.id].v_speed_x = 0;
-            characterStates[win.id].direction = 'left';
-            characterStates[win.id].dx = (-1 * characterStates[win.id].scale * characterStates[win.id].speed);
-            win.setPosition(getDisplaysWidth() - winWidth, y);
-            if (characterStates[win.id].lastEvent && characterStates[win.id].state != 'view' && !characterStates[win.id].isFalling && !characterStates[win.id].isReleased) {
-                characterStates[win.id].lastEvent.sender.send('channel1', 'walk-' + (characterStates[win.id].direction === 'right' ? 'r' : 'l'));
-            }
-        }
-        if (x < 0) { // Left
-            characterStates[win.id].v_speed_x = 0;
-            characterStates[win.id].direction = 'right';
-            characterStates[win.id].dx = (1 * characterStates[win.id].scale * characterStates[win.id].speed);
-            win.setPosition(0, y);
-            if (characterStates[win.id].lastEvent && characterStates[win.id].state != 'view' && !characterStates[win.id].isFalling && !characterStates[win.id].isReleased) {
-                characterStates[win.id].lastEvent.sender.send('channel1', 'walk-' + (characterStates[win.id].direction === 'right' ? 'r' : 'l'));
-            }
-        }
+
         const bounds = getDisplayForPosition(x, y);
 
+        // Bouncing
+        if (x + winWidth > lastRightWall && !bounds) { // Right
+            characterStates[win.id].v_speed_x *= -1;
+            characterStates[win.id].direction = 'left';
+            characterStates[win.id].dx = (-1 * characterStates[win.id].scale * characterStates[win.id].speed);
+            win.setPosition(lastRightWall - winWidth, y);
+            if (characterStates[win.id].lastEvent && characterStates[win.id].state != 'view' && !characterStates[win.id].isFalling && !characterStates[win.id].isReleased) {
+                characterStates[win.id].lastEvent.sender.send('channel1', 'walk-' + (characterStates[win.id].direction === 'right' ? 'r' : 'l'));
+            }
+        }
+        if (x < lastLeftWall && !bounds) { // Left
+            characterStates[win.id].v_speed_x = Math.abs(characterStates[win.id].v_speed_x);
+            characterStates[win.id].direction = 'right';
+            characterStates[win.id].dx = (1 * characterStates[win.id].scale * characterStates[win.id].speed);
+            win.setPosition(lastLeftWall, y);
+            if (characterStates[win.id].lastEvent && characterStates[win.id].state != 'view' && !characterStates[win.id].isFalling && !characterStates[win.id].isReleased) {
+                characterStates[win.id].lastEvent.sender.send('channel1', 'walk-' + (characterStates[win.id].direction === 'right' ? 'r' : 'l'));
+            }
+        }
+
         if (bounds) {
+            console.log("\x1b[1;31m%s\x1b[0m",bounds)
+
+            lastRoofY = bounds.bounds.y
+            lastLeftWall = bounds.bounds.x
+            lastRightWall = bounds.bounds.x + bounds.bounds.width
+
             if (y + winHeight > (!winIsFullscreen ? bounds.workAreaSize.height : bounds.size.height)) { // Bottom
                 characterStates[win.id].v_speed_y = 0;
                 win.setPosition(x, (!winIsFullscreen ? bounds.workAreaSize.height : bounds.size.height) - winHeight);
@@ -693,10 +704,12 @@ function setCollision(win) {
                 win.setPosition(x, (!winIsFullscreen ? height : displays[0].size.height) - winHeight);
                 characterStates[win.id].isFalling = false;
             }
+            
         }
-        if (y < bounds.y) { // Top
-            characterStates[win.id].v_speed_y = 0;
-            win.setPosition(x, bounds.y);
+
+        if (y < lastRoofY) { // Top
+            characterStates[win.id].v_speed_y *= -1;
+            win.setPosition(x, lastRoofY);
         }
     } else {
         if (characterStates[win.id].isFalling && characterStates[win.id].isBouncing) {
@@ -731,9 +744,10 @@ function setCollision(win) {
                 characterStates[win.id].lastEvent.sender.send('channel1', 'walk-' + (characterStates[win.id].direction === 'right' ? 'r' : 'l'));
             }
         }
-        if (y + winHeight > (!winIsFullscreen ? height : displays[0].size.height)) { // Bottom
+        if (y + winHeight > (!winIsFullscreen ? height : displays.size.height)) { // Bottom
             characterStates[win.id].v_speed_y = 0;
-            win.setPosition(x, (!winIsFullscreen ? height : displays[0].size.height) - winHeight);
+            win.setPosition(x, (!winIsFullscreen ? height : displays.size.height) - winHeight);
+            console.log("Condition 5: FALSE")
             characterStates[win.id].isFalling = false;
         }
         if (y < 0) { // Top
@@ -748,7 +762,7 @@ function startGravity(win) {
 
     const shimejiStates = characterStates[win.id];
 
-    // let display = screen.getPrimaryDisplay(); deprecated
+    const displays = screen.getAllDisplays()
     let [x, y] = win.getPosition();
     let [winWidth, winHeight] = win.getSize();
 
@@ -758,6 +772,7 @@ function startGravity(win) {
             // Aplica el efecto de gravedad
             if (y + winHeight < (!winIsFullscreen ? (bounds.workAreaSize.height+bounds.workArea.y) : (bounds.size.height + bounds.bounds.y))) {
                 win.setPosition(x, y + shimejiStates.dy);
+                
                 shimejiStates.isFalling = true;
             } else {
                 shimejiStates.v_speed_x = 0;
