@@ -29,10 +29,6 @@ let allowCustoms = false;
 let store_characters = {};
 let translations = require(`./lang/menu_${currentLanguage}.json`);
 let windows = [];
-let lastRoofY = 0;
-let lastFloorY = Infinity;
-let lastLeftWall = 0;
-let lastRightWall = Infinity;
 let settings;
 let intervals = {};
 let winIsFullscreen = false;
@@ -65,7 +61,7 @@ async function loadPreferences() {
         try {
             const rawdata = await fs.promises.readFile(configPath, "utf-8");
             const preferences = JSON.parse(rawdata);
-            
+
             if (preferences.language) {
                 currentLanguage = preferences.language;
                 translations = require(`./lang/menu_${currentLanguage}.json`);
@@ -291,7 +287,7 @@ function createTray() {
                 e.preventDefault(); // Disabled DevTool
             }
         });
-        
+
         settings.once('ready-to-show', () => {
             settings.maximize();
         });
@@ -507,7 +503,7 @@ function updateTray() {
                 settings.on('focus', () => {
                     settings.setTitleBarOverlay({ color: '#181818', symbolColor: '#ffffff' });
                 });
-        
+
                 settings.on('blur', () => {
                     settings.setTitleBarOverlay({ color: '#1f1f1f', symbolColor: '#9d9d9d' });
                 });
@@ -670,41 +666,41 @@ function setCollision(win) {
         const bounds = getDisplayForPosition(x, y);
 
         // Bouncing
-        if (x + winWidth > lastRightWall && !getDisplayForPosition(x + winWidth, y)) { // Right
+        if (x + winWidth > characterStates[win.id].lastRightWall && !getDisplayForPosition(x + winWidth, y)) { // Right
             characterStates[win.id].v_speed_x *= -1;
             characterStates[win.id].direction = 'left';
             characterStates[win.id].dx = (-1 * characterStates[win.id].scale * characterStates[win.id].speed);
-            win.setPosition(lastRightWall - winWidth, y);
+            win.setPosition(characterStates[win.id].lastRightWall - winWidth, y);
             if (characterStates[win.id].lastEvent && characterStates[win.id].state != 'view' && !characterStates[win.id].isFalling && !characterStates[win.id].isReleased) {
                 characterStates[win.id].lastEvent.sender.send('channel1', 'walk-' + (characterStates[win.id].direction === 'right' ? 'r' : 'l'));
             }
         }
-        if (x < lastLeftWall && !bounds) { // Left
+        if (x < characterStates[win.id].lastLeftWall && !bounds) { // Left
             characterStates[win.id].v_speed_x = Math.abs(characterStates[win.id].v_speed_x);
             characterStates[win.id].direction = 'right';
             characterStates[win.id].dx = (1 * characterStates[win.id].scale * characterStates[win.id].speed);
-            win.setPosition(lastLeftWall, y);
+            win.setPosition(characterStates[win.id].lastLeftWall, y);
             if (characterStates[win.id].lastEvent && characterStates[win.id].state != 'view' && !characterStates[win.id].isFalling && !characterStates[win.id].isReleased) {
                 characterStates[win.id].lastEvent.sender.send('channel1', 'walk-' + (characterStates[win.id].direction === 'right' ? 'r' : 'l'));
             }
         }
 
         if (bounds) {
-            lastRoofY = bounds.bounds.y
-            lastFloorY = bounds.bounds.y + (!winIsFullscreen ? bounds.workAreaSize.height : bounds.size.height)
-            lastLeftWall = bounds.bounds.x
-            lastRightWall = bounds.bounds.x + bounds.bounds.width
-        } 
-        
-        if (y + winHeight > lastFloorY) { // Bottom
+            characterStates[win.id].lastRoofY = bounds.bounds.y
+            characterStates[win.id].lastFloorY = bounds.bounds.y + (!winIsFullscreen ? bounds.workAreaSize.height : bounds.size.height)
+            characterStates[win.id].lastLeftWall = bounds.bounds.x
+            characterStates[win.id].lastRightWall = bounds.bounds.x + bounds.bounds.width
+        }
+
+        if (y + winHeight >characterStates[win.id].lastFloorY) { // Bottom
             characterStates[win.id].v_speed_y = 0;
-            win.setPosition(x, lastFloorY);
+            win.setPosition(x, characterStates[win.id].lastFloorY);
             characterStates[win.id].isFalling = false;
         }
 
-        if (y < lastRoofY) { // Top
+        if (y < characterStates[win.id].lastRoofY) { // Top
             characterStates[win.id].v_speed_y *= -1;
-            win.setPosition(x, lastRoofY);
+            win.setPosition(x, characterStates[win.id].lastRoofY);
         }
     } else {
         if (characterStates[win.id].isFalling && characterStates[win.id].isBouncing) {
@@ -764,15 +760,15 @@ function startGravity(win) {
         const bounds = getDisplayForPosition(x, y);
         if (bounds) {
             // Aplica el efecto de gravedad
-            if (y + winHeight < (!winIsFullscreen ? (bounds.workAreaSize.height+bounds.workArea.y) : (bounds.size.height + bounds.bounds.y))) {
+            if (y + winHeight < (!winIsFullscreen ? (bounds.workAreaSize.height + bounds.workArea.y) : (bounds.size.height + bounds.bounds.y))) {
                 win.setPosition(x, y + shimejiStates.dy);
-                
+
                 shimejiStates.isFalling = true;
             } else {
                 shimejiStates.v_speed_x = 0;
                 shimejiStates.v_speed_y = 0;
                 // Si el personaje está en el suelo
-                win.setPosition(x + shimejiStates.dx, (lastFloorY - winHeight));
+                win.setPosition(x + shimejiStates.dx, (characterStates[win.id].lastFloorY - winHeight));
                 shimejiStates.isFalling = false;
                 // Actualizamos la animación de dangling o falling a idle o walk
                 if (!shimejiStates.isSitting) {
@@ -1096,7 +1092,7 @@ function buildMenu(win) {
                 settings.on('focus', () => {
                     settings.setTitleBarOverlay({ color: '#181818', symbolColor: '#ffffff' });
                 });
-        
+
                 settings.on('blur', () => {
                     settings.setTitleBarOverlay({ color: '#1f1f1f', symbolColor: '#9d9d9d' });
                 });
@@ -1118,6 +1114,10 @@ function createCharacterState(options) {
         dy: 3 * currentScale,
         width: options.frameWidth ?? 36,
         height: options.frameHeight ?? 52,
+        lastRoofY: 0,
+        lastFloorY: Infinity,
+        lastLeftWall: 0,
+        lastRightWall: Infinity,
         state: 'falling',
         direction: 'right',
         speed: 1,
