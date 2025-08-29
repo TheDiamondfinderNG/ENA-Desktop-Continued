@@ -109,7 +109,7 @@ ipcMain.on('channel1', (event, arg) => {
     if (win) {
         characterStates[win.id].lastEvent = event;
         if (characterStates[win.id].lastEvent) {
-            characterStates[win.id].lastEvent.sender.send('setImagePath', path.join(__dirname, '..', 'character'));
+            characterStates[win.id].lastEvent.sender.send('setImagePath', path.join(__dirname, 'character'));
             characterStates[win.id].lastEvent.sender.send('setIsCustom', characterStates[win.id].custom);
             characterStates[win.id].lastEvent.sender.send('changeSprite', characterStates[win.id].sprite, characterStates[win.id].blink);
             characterStates[win.id].lastEvent.sender.send('changeScale', currentScale);
@@ -333,7 +333,7 @@ function updateTray() {
     ];
 
     try {
-        const configPath = path.join(__dirname, '..', 'character', 'config.json');
+        const configPath = path.join(__dirname, 'character', 'config.json');
         config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     } catch (err) {
         console.error('Error reading config file:', err);
@@ -813,7 +813,7 @@ function buildMenu(win) {
     ];
 
     try {
-        const configPath = path.join(__dirname, '..', 'character', 'config.json');
+        const configPath = path.join(__dirname, 'character', 'config.json');
         config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     } catch (err) {
         console.error('Error reading config file:', err);

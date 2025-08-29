@@ -1,0 +1,63 @@
+[
+    {
+        "name": "BBQ Ena",
+        "sprite_path": "ena_bbq_default.png",
+        "blink_path": "ena_bbq_blink.png",
+        "primary_color": "#f3e5be",
+        "secondary_color": "#f85030"
+    },
+    {
+        "name": "Ena Demon",
+        "sprite_path": "ena_demon_default.png",
+        "blink_path": "ena_demon_blink.png",
+        "primary_color": "#2c5bf5",
+        "secondary_color": "#ffe308"
+    },
+    {
+        "name": "Offline Ena",
+        "sprite_path": "offline_ena_default.png",
+        "blink_path": "offline_ena_blink.png",
+        "primary_color": "#909090",
+        "secondary_color": "#838383"
+    },
+    {
+        "name": "ValentEna",
+        "sprite_path": "valentena_default.png",
+        "blink_path": "valentena_blink.png",
+        "primary_color": "#fff6ff",
+        "secondary_color": "#ffc0f2"
+    },
+    {
+        "name": "Akita Neru",
+        "sprite_path": "neru_default.png",
+        "blink_path": "neru_blink.png",
+        "primary_color": "#ffc647",
+        "secondary_color": "#384ff1",
+        "hueShift": [-7, -12, -12],
+        "darknessOffset": [0.40, 0.75, 1.10],
+        "width": 56,
+        "height": 62
+    },
+    {
+        "name": "Hatsune Miku",
+        "sprite_path": "miku_default.png",
+        "blink_path": "miku_blink.png",
+        "primary_color": "#4Bddb2",
+        "secondary_color": "#cc2357",
+        "hueShift": [4.8, 10, 14],
+        "darknessOffset": [0.85, 1.45, 1.60],
+        "width": 56,
+        "height": 62
+    },
+    {
+        "name": "Kasane Teto",
+        "sprite_path": "teto_default.png",
+        "blink_path": "teto_blink.png",
+        "primary_color": "#fb79a6",
+        "secondary_color": "#ffffff",
+        "hueShift": [4, -4, 2],
+        "darknessOffset": [0.50, 1.10, 1.45],
+        "width": 44,
+        "height": 52
+    }
+]
