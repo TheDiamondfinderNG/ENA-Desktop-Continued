@@ -13,8 +13,14 @@
             margin: 0 !important;
             padding: 0 !important;
             outline: none !important;
-            -webkit-app-region: drag;
+            cursor: grab;
+            -webkit-app-region: no-drag;
         }
+
+        body:active {
+            cursor: grabbing;
+        }
+
         canvas {
             pointer-events: none;
             width: 100%;
@@ -23,6 +29,7 @@
         }
     </style>
 </head>
+
 <body>
     <script src="image-utils.js"></script>
     <script src="animate-utils.js"></script>
@@ -31,10 +38,54 @@
         let options = {};
         let imgPath = null;
         let isCustom = false;
+        let wasDragging = false;
+        let currentDrag = false;
+        let dragOffset = { x: 0, y: 0 };
 
         function getRandomNumber() {
             return Math.random() < 0.5 ? 1 : -1;
         }
+
+        // Drag functions
+
+        function drag() {
+            window.api.send('drag-me', dragOffset);
+            wasDragging = true
+        }
+        function stopDrag() {
+            window.api.send('stop-drag', '');
+            wasDragging = false
+        }
+
+        // Check every frame for dragging
+        function dragCheck() {
+            if (currentDrag) drag();
+            // Check to make sure this function doesn't run when it doesn't need to
+            else if (wasDragging) stopDrag();
+
+            requestAnimationFrame(dragCheck);
+        }
+        requestAnimationFrame(dragCheck);
+        
+        // When clicked at all
+        document.addEventListener("mousedown", (e) => {
+            if(e.button == 0){ // Left click
+                // Start dragging
+                currentDrag = true
+                // Set the offset (the point where the ENA was clicked)
+                dragOffset.x = e.x
+                dragOffset.y = e.y
+            } else if (e.button == 2) { // Right click
+                // Open context menu
+                window.api.send('right-click', '');
+            }
+            // Prevent weird middle click behavior
+            e.preventDefault()
+        });
+        document.addEventListener("mouseup", () => {
+            currentDrag = false
+        });
+
         window.api.send('channel1', '');
 
         window.api.receive('channel1', (data) => {
@@ -46,7 +97,7 @@
         window.api.receive('setCharacterState', (states) => {
             options = JSON.parse(states);
         });
-        
+
         window.api.receive('setImagePath', (path) => {
             imgPath = path;
         });
@@ -108,7 +159,7 @@
                 baguette: 'img/accessory/baguette_accessory.png',
                 pearto: 'img/accessory/pearto_accessory.png'
             };
-            
+
             // Sprites and more
             imageUtils.loadImages(spritesheet).then((imgs) => {
                 const name = sprite.replace(/(^img\/character\/)|(_default\.png$)/g, '').toLowerCase();
@@ -146,10 +197,10 @@
                     [9, 0]
                 ]);
                 animateUtils.createAnimation('init-fall-l', 6, 0, false, [
-                    [0, 2], [1, 2], [2, 2], 
+                    [0, 2], [1, 2], [2, 2],
                 ]);
                 animateUtils.createAnimation('init-fall-r', 6, 1, false, [
-                    [3, 2], [4, 2], [5, 2], 
+                    [3, 2], [4, 2], [5, 2],
                 ]);
                 animateUtils.createAnimation('blinking', 10, 0, true, [
                     [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [1, 0], [1, 0]

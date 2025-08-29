@@ -118,6 +118,67 @@ ipcMain.on('channel1', (event, arg) => {
     }
 });
 
+ipcMain.on('right-click', (event, arg) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    characterStates[win.id].menu.popup();
+})
+
+ipcMain.on('drag-me', (event, offset) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+
+    let mouse = screen.getCursorScreenPoint()
+    win.setPosition(mouse.x - offset.x, mouse.y - offset.y)
+
+    // Moving the Window!
+    const shimejiStates = characterStates[win.id];
+    shimejiStates.isDragging = true;
+    const deltaX = shimejiStates.dragPos.newX - shimejiStates.dragPos.oldX;
+
+    let move = {
+        timeout: null,
+        state: 'stand'
+    };
+
+    if (deltaX > 2) {
+        move.state = 'drag-r';
+        shimejiStates.lastEvent.sender.send('channel1', 'drag-r');
+    } else if (deltaX < -2) {
+        move.state = 'drag-l';
+        shimejiStates.lastEvent.sender.send('channel1', 'drag-l');
+    } else {
+        if (move.state.includes('drag')) {
+            move.timeout = setTimeout(() => {
+                if (shimejiStates.lastEvent && !shimejiStates.isReleased && (deltaX <= 1 || deltaX >= -1)) {
+                    shimejiStates.lastEvent.sender.send('channel1', 'dangle-' + (shimejiStates.direction == 'right' ? 'r' : 'l'));
+                    move.timeout = null;
+                    move.state = 'dangle';
+                }
+            }, 200);
+        } else {
+            if (shimejiStates.lastEvent && !shimejiStates.isReleased) {
+                shimejiStates.lastEvent.sender.send('channel1', 'dangle-' + (shimejiStates.direction == 'right' ? 'r' : 'l'));
+                move.state = 'dangle';
+            }
+        }
+    }
+    shimejiStates.isReleased = false;
+});
+
+ipcMain.on('stop-drag', (event, arg) => {
+
+    const win = BrowserWindow.fromWebContents(event.sender);
+
+    const shimejiStates = characterStates[win.id];
+
+    const deltaX = shimejiStates.dragPos.newX - shimejiStates.dragPos.oldX;
+    const deltaY = shimejiStates.dragPos.newY - shimejiStates.dragPos.oldY;
+
+    shimejiStates.v_speed_x = deltaX;
+    shimejiStates.v_speed_y = deltaY;
+    shimejiStates.isDragging = false;
+    shimejiStates.isReleased = true;
+})
+
 ipcMain.on('duplicate-character', (event, id) => {
     createShimejiWindow({
         characterName: characterStates[id].characterName,
@@ -651,19 +712,36 @@ function getDisplaysWidth() {
 }
 
 function setCollision(win) {
-    // If window is removed or being dragged, disable collision
-    if (win == undefined || (characterStates[win.id] && characterStates[win.id].isDragging)) { return; }
 
-    // let display = screen.getPrimaryDisplay(); // deprecated
+    // Get displays
     const displays = screen.getAllDisplays();
+    // Window position and size
     let [x, y] = win.getPosition();
-    const bounds = getDisplayForPosition(x, y)
     let [winWidth, winHeight] = win.getSize();
+    // Current monitor position
+    const bounds = getDisplayForPosition(x, y)
     let { width, height } = (bounds ?? displays[0]).workAreaSize;
 
-    if (displays.length > 1) {
+    
+    // Update bounds, important for out of bounds scenarios
+    if (bounds) {
+        // Not in the void, reset timer
+        characterStates[win.id].voidTimer = -1
+        
+        // 
+        characterStates[win.id].lastRoofY = bounds.bounds.y
+        characterStates[win.id].lastFloorY = bounds.bounds.y + (!winIsFullscreen ? bounds.workAreaSize.height : bounds.size.height)
+        characterStates[win.id].lastLeftWall = bounds.bounds.x
+        characterStates[win.id].lastRightWall = bounds.bounds.x + bounds.bounds.width
+    }
+    
+    // If window is removed or being dragged, disable collision and unnecessary void detection
+    if (win == undefined || (characterStates[win.id] && characterStates[win.id].isDragging)) { return; }
 
-        const bounds = getDisplayForPosition(x, y);
+    // Increment void timer
+    characterStates[win.id].voidTimer++
+
+    if (displays.length > 1) {
 
         // Bouncing
         if (x + winWidth > characterStates[win.id].lastRightWall && !getDisplayForPosition(x + winWidth, y)) { // Right
@@ -685,14 +763,20 @@ function setCollision(win) {
             }
         }
 
-        if (bounds) {
-            characterStates[win.id].lastRoofY = bounds.bounds.y
-            characterStates[win.id].lastFloorY = bounds.bounds.y + (!winIsFullscreen ? bounds.workAreaSize.height : bounds.size.height)
-            characterStates[win.id].lastLeftWall = bounds.bounds.x
-            characterStates[win.id].lastRightWall = bounds.bounds.x + bounds.bounds.width
+        // Update position
+        [x, y] = win.getPosition();
+
+
+        if (characterStates[win.id].voidTimer >= 60) {
+            console.log("Looks like this little ENA breached containment")
+            characterStates[win.id].v_speed_y = 0;
+            characterStates[win.id].v_speed_x = 0;
+
+            win.setPosition(characterStates[win.id].lastRightWall / 2, 0)
+            return;
         }
 
-        if (y + winHeight >characterStates[win.id].lastFloorY) { // Bottom
+        if (y + winHeight > characterStates[win.id].lastFloorY) { // Bottom
             characterStates[win.id].v_speed_y = 0;
             win.setPosition(x, characterStates[win.id].lastFloorY);
             characterStates[win.id].isFalling = false;
@@ -1114,6 +1198,7 @@ function createCharacterState(options) {
         dy: 3 * currentScale,
         width: options.frameWidth ?? 36,
         height: options.frameHeight ?? 52,
+        voidTimer: 0,
         lastRoofY: 0,
         lastFloorY: Infinity,
         lastLeftWall: 0,
@@ -1174,7 +1259,7 @@ function createShimejiWindow(options) {
             enableRemoteModule: true
         }
     });
-
+    win.setMovable(false)
     win.setAlwaysOnTop(true, "screen-saver");
     win.setIgnoreMouseEvents(currentIgnore);
 
@@ -1198,73 +1283,6 @@ function createShimejiWindow(options) {
 
     buildMenu(win);
 
-    let move = {
-        timeout: null,
-        timeout2: null,
-        state: 'stand'
-    };
-
-    win.on('will-move', () => {
-        // Moving the Window!
-        const shimejiStates = characterStates[win.id];
-        shimejiStates.isDragging = true;
-        const deltaX = shimejiStates.dragPos.newX - shimejiStates.dragPos.oldX;
-
-        if (deltaX > 2) {
-            if (shimejiStates.lastEvent) {
-                move.state = 'drag-r';
-                shimejiStates.lastEvent.sender.send('channel1', 'drag-r');
-            }
-        } else if (deltaX < -2) {
-            if (shimejiStates.lastEvent) {
-                move.state = 'drag-l';
-                shimejiStates.lastEvent.sender.send('channel1', 'drag-l');
-            }
-        } else {
-            if (shimejiStates.lastEvent) {
-                if (move.state.includes('drag')) {
-                    move.timeout2 = setTimeout(() => {
-                        if (shimejiStates.lastEvent && !shimejiStates.isReleased && (deltaX <= 1 || deltaX >= -1)) {
-                            shimejiStates.lastEvent.sender.send('channel1', 'dangle-' + (shimejiStates.direction == 'right' ? 'r' : 'l'));
-                            move.timeout2 = null;
-                            move.state = 'dangle';
-                        }
-                    }, 200);
-                } else {
-                    if (shimejiStates.lastEvent && !shimejiStates.isReleased) {
-                        shimejiStates.lastEvent.sender.send('channel1', 'dangle-' + (shimejiStates.direction == 'right' ? 'r' : 'l'));
-                        move.state = 'dangle';
-                    }
-                }
-            }
-        }
-        shimejiStates.isReleased = false;
-
-        clearTimeout(move.timeout);
-        move.timeout = setTimeout(() => {
-            if (shimejiStates.lastEvent && !shimejiStates.isReleased) {
-                shimejiStates.lastEvent.sender.send('channel1', 'dangle-' + (shimejiStates.direction == 'right' ? 'r' : 'l'));
-                move.state = 'dangle';
-            }
-        }, 200);
-    });
-
-    win.on('moved', () => {
-        // the window has been released
-        dragPosition();
-    });
-
-    function dragPosition() {
-        const shimejiStates = characterStates[win.id];
-
-        const deltaX = shimejiStates.dragPos.newX - shimejiStates.dragPos.oldX;
-        const deltaY = shimejiStates.dragPos.newY - shimejiStates.dragPos.oldY;
-
-        shimejiStates.v_speed_x = deltaX;
-        shimejiStates.v_speed_y = deltaY;
-        shimejiStates.isDragging = false;
-        shimejiStates.isReleased = true;
-    }
 
     win.loadFile('index.html').then(() => {
         const state = characterStates[win_id];
