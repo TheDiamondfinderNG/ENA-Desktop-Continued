@@ -1,8 +1,8 @@
 {
   "name": "desktop-ena",
   "author": "TanyaHastur",
-  "version": "0.0.65-alpha",
-  "description": "Desktop ENA Client for Desktop",
+  "version": "1.0.0",
+  "description": "Desktop ENA Client for Desktop (Community Continued)",
   "main": "main.js",
   "private": true,
   "dependencies": {
