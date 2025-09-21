@@ -6,7 +6,6 @@
   "main": "main.js",
   "private": true,
   "dependencies": {
-    "active-win": "^8.1.0",
-    "node-window-manager": "^2.2.4"
+    "active-win": "^8.1.0"
   }
 }

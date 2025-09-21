@@ -3,10 +3,20 @@ const { setActions } = require('./actions');
 const { setPhysics } = require('./physics');
 const { getRandomNumber } = require('./utils');
 const { characterStates } = require('./States.js');
-const activeWin = require('active-win');
 const path = require('path');
 const fs = require('fs');
 const isSecondInstance = app.requestSingleInstanceLock();
+
+try {
+    // Dependencies
+    const activeWin = require('active-win');
+} catch (error) {
+    error.message = "Missing dependencies, please run `npm install` in your terminal in the /resources/app directory"
+    error.stack = ""
+    console.log("Please run `npm install` in ./resources/app")
+    app.quit();
+    throw error
+}
 
 if (!isSecondInstance) { // Close the new instance if one is already running
     app.quit();
@@ -37,10 +47,10 @@ let contextMenu = null;
 const WM_INITMENU = 0x0116;
 ipcMain.setMaxListeners(10);
 
-
+// Watermark
 console.log('\x1b[36m%s\x1b[0m', 'Desktop ENA developed by TanyaHastur, all rights reserved.');
 
-
+// Save preferences to the preferences.json file
 async function savePreferences() {
     const preferences = {
         language: currentLanguage,
@@ -56,6 +66,7 @@ async function savePreferences() {
     }
 }
 
+// Load preferences from the preferences.json file
 async function loadPreferences() {
     if (fs.existsSync(configPath)) {
         try {
@@ -123,6 +134,7 @@ ipcMain.on('right-click', (event, arg) => {
     characterStates[win.id].menu.popup();
 })
 
+// Custom drag function, a work-around for aero shake
 ipcMain.on('drag-me', (event, offset) => {
     const win = BrowserWindow.fromWebContents(event.sender);
 
@@ -164,6 +176,7 @@ ipcMain.on('drag-me', (event, offset) => {
     shimejiStates.isReleased = false;
 });
 
+// Prevent being pinned to the wall
 ipcMain.on('stop-drag', (event, arg) => {
 
     const win = BrowserWindow.fromWebContents(event.sender);

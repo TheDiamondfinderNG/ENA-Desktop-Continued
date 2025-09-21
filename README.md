@@ -13,10 +13,13 @@ Because it's fun
 Instructions on how to compile it
 
 ### Via Electron
+#### Requires npm
+
 1. Go to [Electron v24.3.1](https://github.com/electron/electron/releases/tag/v24.3.1) and download the appropriate electron version for your OS
 2. Extract the zip file and go to `/resources`
 3. Delete the contents of the folder and create folder `/app` inside
 4. Put this repository's contents into the new `/app` directory
+5. Open a terminal and run `npm install`
 ### Via Releases
 1. Go to releases
 2. Download the correct release for your OS
