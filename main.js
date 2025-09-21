@@ -3,20 +3,10 @@ const { setActions } = require('./actions');
 const { setPhysics } = require('./physics');
 const { getRandomNumber } = require('./utils');
 const { characterStates } = require('./States.js');
+const activeWin = require('active-win');
 const path = require('path');
 const fs = require('fs');
 const isSecondInstance = app.requestSingleInstanceLock();
-
-try {
-    // Dependencies
-    const activeWin = require('active-win');
-} catch (error) {
-    error.message = "Missing dependencies, please run `npm install` in your terminal in the /resources/app directory"
-    error.stack = ""
-    console.log("Please run `npm install` in ./resources/app")
-    app.quit();
-    throw error
-}
 
 if (!isSecondInstance) { // Close the new instance if one is already running
     app.quit();
