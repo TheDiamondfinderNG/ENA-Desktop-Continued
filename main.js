@@ -652,6 +652,10 @@ function onDestroy(win) {
     clearInterval(intervals[win.id]);
     delete characterStates[win.id];
     delete intervals[win.id];
+    if(Object.keys(characterStates).length == 0){
+        console.log('\x1b[31m%s\x1b[0m', 'There are no characters, leaving Desktop ENA...');
+        app.quit(); 
+    } 
 }
 
 async function update(delta, win) {
