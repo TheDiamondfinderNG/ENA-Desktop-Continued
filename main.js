@@ -141,12 +141,12 @@ ipcMain.on('drag-me', (event, offset) => {
         state: 'stand'
     };
 
-    if (deltaX > 2) {
-        move.state = 'drag-r';
-        shimejiStates.lastEvent.sender.send('channel1', 'drag-r');
-    } else if (deltaX < -2) {
-        move.state = 'drag-l';
-        shimejiStates.lastEvent.sender.send('channel1', 'drag-l');
+    if (deltaX > 0) {
+        move.state = deltaX > 5 ? 'drag-r' : 'light-drag-r';
+        shimejiStates.lastEvent.sender.send('channel1', move.state);
+    } else if (deltaX < 0) {
+        move.state = deltaX < -5 ? 'drag-l' : 'light-drag-l';
+        shimejiStates.lastEvent.sender.send('channel1', move.state);
     } else {
         if (move.state.includes('drag')) {
             move.timeout = setTimeout(() => {
