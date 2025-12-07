@@ -1,6 +1,6 @@
 class AnimateUtils {
     constructor() {
-        this.version = '1.0.0';
+        this.version = '1.0.1';
         this.lastFps = performance.now();
         this.frames = 0;
         this.lastDraw = 0;
