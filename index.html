@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -39,7 +40,9 @@
         let imgPath = null;
         let isCustom = false;
         let wasDragging = false;
+        let wasPetting = false;
         let currentDrag = false;
+        let petAmount = 0
         let dragOffset = { x: 0, y: 0 };
 
         function getRandomNumber() {
@@ -57,19 +60,42 @@
             wasDragging = false
         }
 
-        // Check every frame for dragging
-        function dragCheck() {
-            if (currentDrag) drag();
-            // Check to make sure this function doesn't run when it doesn't need to
-            else if (wasDragging) stopDrag();
+        // Pet functions
 
-            requestAnimationFrame(dragCheck);
+        function pet() {
+            petAmount += 1
+            window.api.send('pet', petAmount);
+            wasPetting = true
         }
-        requestAnimationFrame(dragCheck);
-        
+        function stopPet() {
+            window.api.send('stop-pet');
+            wasPetting = false
+        }
+        // Check every frame for dragging
+        function frameCheck() {
+            // Pet decay
+            petAmount -= 5
+
+            if (currentDrag) {
+                drag();
+
+                // Prevent odd pet behavior
+                petAmount = 0
+            }
+            // Check to make sure this function doesn't run when it doesn't need to
+            else if (wasDragging) { stopDrag(); }
+
+            if (petAmount > 40) pet();
+            else if (wasPetting) stopPet();
+
+            petAmount = Math.max(0, Math.min(850, petAmount))
+            requestAnimationFrame(frameCheck);
+        }
+        requestAnimationFrame(frameCheck);
+
         // When clicked at all
         document.addEventListener("mousedown", (e) => {
-            if(e.button == 0){ // Left click
+            if (e.button == 0) { // Left click
                 // Start dragging
                 currentDrag = true
                 // Set the offset (the point where the ENA was clicked)
@@ -86,6 +112,11 @@
             currentDrag = false
         });
 
+        // When clicked at all
+        document.addEventListener("mousemove", (e) => {
+            petAmount += 6
+        });
+
         window.api.send('channel1', '');
 
         window.api.receive('channel1', (data) => {
@@ -93,11 +124,14 @@
                 animateUtils.changeAnimation(characterName, data);
             }
         });
-
+        
         window.api.receive('setCharacterState', (states) => {
             options = JSON.parse(states);
         });
-
+        
+        window.api.receive('setClosedEyes', (bool) => {
+            animateUtils.closeEyes(characterName, bool)
+        })
         window.api.receive('setImagePath', (path) => {
             imgPath = path;
         });
@@ -212,6 +246,7 @@
                 animateUtils.createAnimation('blinking', 10, 0, true, [
                     [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [1, 0], [1, 0]
                 ]);
+                animateUtils.createAnimation('closed-eyes', 1, 0, true, Array(42).fill([1,0]));
                 const direction = getRandomNumber() < 0 ? 'l' : 'r';
                 const frameWidth = imgs.character.width / 10;
                 const frameHeight = imgs.character.height / 4;
@@ -249,4 +284,5 @@
         });
     </script>
 </body>
+
 </html>

@@ -167,7 +167,7 @@ ipcMain.on('drag-me', (event, offset) => {
 });
 
 // Prevent being pinned to the wall
-ipcMain.on('stop-drag', (event, arg) => {
+ipcMain.on('stop-drag', (event) => {
 
     const win = BrowserWindow.fromWebContents(event.sender);
 
@@ -181,6 +181,28 @@ ipcMain.on('stop-drag', (event, arg) => {
     shimejiStates.isDragging = false;
     shimejiStates.isReleased = true;
 })
+
+// Custom drag function, a work-around for aero shake
+ipcMain.on('pet', (event, petAmount) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    const shimejiStates = characterStates[win.id];
+    shimejiStates.dx = 0
+    
+    shimejiStates.lastEvent.sender.send('setClosedEyes', petAmount > 200);
+    if (petAmount > 400) {        
+        shimejiStates.isPetting = true
+        shimejiStates.lastEvent.sender.send('channel1', 'sit-' + (shimejiStates.direction === 'right' ? 'r' : 'l'));
+    }
+});
+
+// Prevent being pinned to the wall
+ipcMain.on('stop-pet', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    characterStates[win.id].isPetting = false
+    
+    characterStates[win.id].lastEvent.sender.send('setClosedEyes', false);
+})
+
 
 ipcMain.on('duplicate-character', (event, id) => {
     createShimejiWindow({
@@ -652,10 +674,10 @@ function onDestroy(win) {
     clearInterval(intervals[win.id]);
     delete characterStates[win.id];
     delete intervals[win.id];
-    if(Object.keys(characterStates).length == 0){
+    if (Object.keys(characterStates).length == 0) {
         console.log('\x1b[31m%s\x1b[0m', 'There are no characters, leaving Desktop ENA...');
-        app.quit(); 
-    } 
+        app.quit();
+    }
 }
 
 async function update(delta, win) {
@@ -677,9 +699,9 @@ async function update(delta, win) {
     let display = screen.getPrimaryDisplay();
     let { width, height } = display.size;
     if (window != undefined) {
-        if (!characterStates[win.id].isSitting) {
+        if (!characterStates[win.id].isSitting && !characterStates[win.id].isPetting) {
             characterStates[win.id].state = characterStates[win.id].dx == 0 ? 'idle' : 'walk';
-        } else if (characterStates[win.id].isSitting) {
+        } else {
             characterStates[win.id].state = 'sit';
         }
         if (window.title === 'Desktop ENA' || window.title === 'ENA' || window.title === '' || window.title === 'Program Manager') { return false; }
@@ -729,19 +751,19 @@ function setCollision(win) {
     const bounds = getDisplayForPosition(x, y)
     let { width, height } = (bounds ?? displays[0]).workAreaSize;
 
-    
+
     // Update bounds, important for out of bounds scenarios
     if (bounds) {
         // Not in the void, reset timer
         characterStates[win.id].voidTimer = -1
-        
+
         // 
         characterStates[win.id].lastRoofY = bounds.bounds.y
         characterStates[win.id].lastFloorY = bounds.bounds.y + (!winIsFullscreen ? bounds.workAreaSize.height : bounds.size.height)
         characterStates[win.id].lastLeftWall = bounds.bounds.x
         characterStates[win.id].lastRightWall = bounds.bounds.x + bounds.bounds.width
     }
-    
+
     // If window is removed or being dragged, disable collision and unnecessary void detection
     if (win == undefined || (characterStates[win.id] && characterStates[win.id].isDragging)) { return; }
 
@@ -862,7 +884,7 @@ function startGravity(win) {
                 win.setPosition(x + shimejiStates.dx, (characterStates[win.id].lastFloorY - winHeight));
                 shimejiStates.isFalling = false;
                 // Actualizamos la animación de dangling o falling a idle o walk
-                if (!shimejiStates.isSitting) {
+                if (!shimejiStates.isSitting && !shimejiStates.isPetting) {
                     if (shimejiStates.lastEvent && shimejiStates.state != 'view') {
                         shimejiStates.lastEvent.sender.send('channel1', (shimejiStates.state === 'idle' ? 'idle-' : 'walk-') + (shimejiStates.direction === 'right' ? 'r' : 'l'));
                     }
@@ -877,7 +899,7 @@ function startGravity(win) {
     // Physics
     setPhysics(win);
     // Sitting Gravity
-    if (shimejiStates.lastEvent && !shimejiStates.isFalling && shimejiStates.isSitting && !shimejiStates.isDragging) {
+    if (shimejiStates.lastEvent && !shimejiStates.isFalling && (shimejiStates.isSitting || shimejiStates.isSitting) && !shimejiStates.isDragging) {
         shimejiStates.lastEvent.sender.send('channel1', 'sit-' + (shimejiStates.direction === 'right' ? 'r' : 'l'));
         shimejiStates.dx = 0;
     }
@@ -1222,6 +1244,7 @@ function createCharacterState(options) {
         isFalling: true,
         isBouncing: true,
         isSitting: false,
+        isPetting: false,
         primary: options.characterId ? characterStates[options.characterId].primary : (options.primaryColor ?? '#2c5bf5'),
         secondary: options.characterId ? characterStates[options.characterId].secondary : (options.secondaryColor ?? '#ffe308'),
         tertiary: options.characterId ? characterStates[options.characterId].tertiary : '#2c5bf5',
@@ -1282,7 +1305,7 @@ function createShimejiWindow(options) {
 
     win.webContents.on('before-input-event', (e, input) => {
         if ((input.control && input.shift && input.key === 'I')) {
-            e.preventDefault(); // Disabled DevTools
+            // e.preventDefault(); // Disabled DevTools
         }
     });
     // Disabled Fullscreen

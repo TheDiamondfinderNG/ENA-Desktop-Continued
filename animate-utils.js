@@ -97,6 +97,7 @@ class AnimateUtils {
             vspd: options.vspd || 0,
             recolor: options.recolor || false,
             blink: options.blink || true,
+            eyesClosed: options.eyesClosed || false,
             accessory: options.accessory || 'none',
             c_primary: options.primary || '#2c5bf5',
             c_secondary: options.secondary || '#ffe308',
@@ -232,6 +233,11 @@ class AnimateUtils {
             character.state.animationFrame = 0;
         }
     };
+    closeEyes = function(name, closed) {
+        var character = this.characters.find(k => k.name === name);
+        
+        character.eyesClosed = closed
+    };
     // hslToRgb = function(h, s, l) {
     //     let a = s * Math.min(l, 1 - l);
     //     let f = (n,k=(n + h / 30) % 12)=>l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
@@ -322,7 +328,7 @@ class AnimateUtils {
                 document.querySelector('#current-frame').value = character.state.animationFrame;
             }
             // Draw blink in character
-            if (character.canvas2 != null && character.blink && !character.activeAnimation.includes("init-fall-") && this.findAnimation('blinking').frames[character.state.blinkFrame].offsetX === 1) {
+            if (character.canvas2 != null && character.blink && !character.activeAnimation.includes("init-fall-") && this.findAnimation(character.eyesClosed ? 'closed-eyes' : 'blinking').frames[character.state.blinkFrame].offsetX === 1) {
                 if (this.username != null) {
                     // manage.html
                     this.context.drawImage(character.canvas2, this.store_coords.eye.characters[character.name].index * this.store_coords.eye.w, this.findAnimation(character.activeAnimation).direction ? this.store_coords.eye.h : 0, this.store_coords.eye.w, this.store_coords.eye.h, (400 / 2) - ((character.w / 2) * this.scale) + (this.store_coords.eye.characters[character.name].coord[this.findAnimation(character.activeAnimation).frames[character.state.animationFrame].offsetX + (this.findAnimation(character.activeAnimation).frames[character.state.animationFrame].offsetY * 10)][0] * this.scale), (400 / 2) - ((character.h / 2) * this.scale) + (this.store_coords.eye.characters[character.name].coord[this.findAnimation(character.activeAnimation).frames[character.state.animationFrame].offsetX + (this.findAnimation(character.activeAnimation).frames[character.state.animationFrame].offsetY * 10)][1] * this.scale), this.store_coords.eye.w * this.scale, this.store_coords.eye.h * this.scale);
@@ -334,7 +340,9 @@ class AnimateUtils {
             // This will animate the character
             character.animationTime += delta;
             if (character.blink) {
-                character.state.blinkFrame = Math.floor((character.animationTime + character.state.randomBlink) * this.findAnimation('blinking').fps) % this.findAnimation('blinking').frames.length;
+
+                character.state.blinkFrame = Math.floor((character.animationTime + character.state.randomBlink) * this.findAnimation(character.eyesClosed ? 'closed-eyes' : 'blinking').fps) % this.findAnimation(character.eyesClosed ? 'closed-eyes' : 'blinking').frames.length;
+            
             }
 
             if (!(!this.findAnimation(character.activeAnimation).loop && character.state.animationFrame >= (this.findAnimation(character.activeAnimation).frames.length - 1))) {
