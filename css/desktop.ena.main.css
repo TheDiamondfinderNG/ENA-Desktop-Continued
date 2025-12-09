@@ -130,29 +130,113 @@ body.windows {
     position: relative
 }
 
-.nav-item {
-    display: inline-block;
-    width: 33% !important;
-    height: 72px;
-    text-align: center;
-    font-size: 2em;
-    font-weight: bold;
-}
-.nav-item img {
-    margin: auto;
-    display: block;
-    height: 75%;
-    padding: 10px;
-}
-.nav-item:not(:last-child) {
-    border-right: #cccccc 3px solid;
+
+/* menu-bar */
+menu-bar {
+    padding-bottom: 50px;
 }
 
-#nav {
+.navbar {
+    align-items: center;
     display: flex;
     flex-wrap: wrap;
+    justify-content: space-between;
+    padding: 8px 0;
+    position: relative;
+    color: rgba(0, 0, 0, 0.65);
+}
+
+.navbar-expand {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+}
+
+.navbar {
+    font-size: 16px;
+    margin-bottom: 0;
+    padding: 4px 0 0 !important;
+}
+
+.navbar-collapse {
+    align-items: center;
+    flex-basis: 100%;
+    flex-grow: 1;
+}
+
+.justify-content-end {
+    justify-content: flex-end !important;
+}
+
+.navbar-expand .navbar-collapse {
+    display: flex !important;
+    flex-basis: auto;
+}
+
+.navbar-nav {
+    display: flex;
+    flex-direction: column;
+    list-style: none;
+    margin-bottom: 0;
+    padding-left: 0;
+}
+
+.navbar-expand .navbar-nav {
     flex-direction: row;
-    margin: 50px 30px;
+}
+
+.navbar-link {
+    border-top: 4px solid transparent;
+    margin-right: 5px;
+    margin-top: -4px;
+}
+
+.navbar-link.active,
+.navbar-link:active,
+.navbar-link:hover,
+.navbar-link:link {
+    border-right-color: #fff;
+    border-top-color: #fff;
+    text-decoration: none;
+}
+
+.navbar-nav .dropdown>a,
+.navbar-nav .dropdown>button,
+.navbar-nav .navbar-link>a,
+.navbar-nav .navbar-link>button {
+    border: none;
+    color: #9c9c9c;
+    display: block;
+    font-size: inherit;
+    line-height: 20px;
+    padding: 15px;
+    text-decoration: none;
+}
+
+.navbar-nav .dropdown.active>a,
+.navbar-nav .dropdown.active>button,
+.navbar-nav .dropdown:hover>a,
+.navbar-nav .dropdown:hover>button,
+.navbar-nav .navbar-link.active>a,
+.navbar-nav .navbar-link.active>button,
+.navbar-nav .navbar-link:hover>a,
+.navbar-nav .navbar-link:hover>button {
+    color: #fff;
+    text-decoration: none;
+}
+
+.hide-small {
+    display: inline;
+}
+
+.logo {
+    left: 0;
+    margin-top: 5px;
+    position: absolute;
+    top: 0;
+}
+
+.logo.active {
+    display: none;
 }
 
 @property --var1 {
