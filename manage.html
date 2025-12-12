@@ -652,6 +652,7 @@
 		// recolor-update
 		function recolorUpdate() {
 			if (characterPreview != null) {
+				document.querySelector('#save-btn').disabled = false
 				characterPreview.setRecolor([document.querySelector('.primary-color-value').value, document.querySelector('.secondary-color-value').value]);
 				characterPreview.setRecolor2([document.querySelector('.tertiary-color-value').value, document.querySelector('.quaternary-color-value').value]);
 				let accessory = characterPreview.findCharacter(characterPreview.name).accessory;
