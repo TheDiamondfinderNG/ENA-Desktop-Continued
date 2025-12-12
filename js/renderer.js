@@ -233,9 +233,6 @@ document.querySelector('#duplicate-btn').addEventListener('click', (event) => {
 
 document.querySelector('#save-btn').addEventListener('click', (event) => {
     event.target.disabled = true;
-    setTimeout(() => {
-        event.target.disabled = false;
-    }, 1500);
     let id = characters.value;
 
     if (id != -1) {
@@ -253,6 +250,7 @@ document.querySelector('#save-btn').addEventListener('click', (event) => {
 });
 
 document.querySelector('#accessory').addEventListener('change', (event) => {
+    document.querySelector("#save-btn").disabled = false;
     characterPreview.setAccessory(document.querySelector('#accessory').value, [document.querySelector('.tertiary-color-value').value, document.querySelector('.quaternary-color-value').value]);
 });
 
@@ -319,7 +317,6 @@ characters.addEventListener('change', (event) => {
     if (document.getElementsByClassName('character-tab-none').length > 0) {
         document.querySelector('.character-tab').classList.remove('character-tab-none');
         document.querySelector("#duplicate-btn").disabled = false;
-        document.querySelector("#save-btn").disabled = false;
     }
 
     // Update Settings
@@ -334,7 +331,7 @@ characters.addEventListener('change', (event) => {
     document.querySelector('.tertiary-color-value').value = ipcRenderer.sendSync('get-character-state', id).tertiary;
     document.querySelector('.quaternary-color-value').value = ipcRenderer.sendSync('get-character-state', id).quaternary;
     document.querySelector('#accessory').value = ipcRenderer.sendSync('get-character-state', id).accessory;
-
+    
     if (characterPreview != null) {
         characterPreview.scale = characterPreview.clamp(Number(ipcRenderer.sendSync('get-scale')), 1, 6);
         let characterStates = ipcRenderer.sendSync('get-character-state', id);
@@ -396,8 +393,8 @@ characters.addEventListener('change', (event) => {
             characterPreview.createAnimation('dangle-l', 4, 0, true, [[0, 1], [1, 1], [2, 1], [1, 1]]);
             characterPreview.createAnimation('dangle-r', 4, 1, true, [[3, 1], [4, 1], [5, 1], [4, 1]]);
             // drag animations have to use the opposite direction for the blink to work correctly
-            characterPreview.createAnimation('drag-l', 4, 1, false, [[9, 1], [9, 1], [9, 1], [9, 1], [9, 1], [9, 1], [9, 1], [9, 1]]);
-            characterPreview.createAnimation('drag-r', 4, 0, false, [[7, 1], [7, 1], [7, 1], [7, 1], [7, 1], [7, 1], [7, 1], [7, 1]]);
+            characterPreview.createAnimation('drag-l', 4, 1, true, [[8, 1], [9, 1], [9, 1], [9, 1], [9, 1], [9, 1], [9, 1], [9, 1]]);
+            characterPreview.createAnimation('drag-r', 4, 0, true, [[6, 1], [7, 1], [7, 1], [7, 1], [7, 1], [7, 1], [7, 1], [7, 1]]);
             characterPreview.createAnimation('sit-l', 4, 0, true, [[8, 0], [8, 0], [8, 0]]);
             characterPreview.createAnimation('sit-r', 4, 1, true, [[9, 0], [9, 0], [9, 0]]);
             characterPreview.createAnimation('init-fall-l', 6, 0, true, [[0, 2], [1, 2], [2, 2]]);

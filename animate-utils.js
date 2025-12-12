@@ -152,14 +152,12 @@ class AnimateUtils {
                     coord: data.accessory.map(([x, y, z], index) => [x + diffW + (w - 36) * (index % 10), y + diffH, z])
                 };
             }
-
+            this.setRecolor([
+                this.findCharacter(this.name).c_primary,
+                this.findCharacter(this.name).c_secondary
+            ]);
             if (this.findCharacter(this.name).accessory != 'none') {
                 this.setAccessory(this.findCharacter(this.name).accessory);
-            } else {
-                this.setRecolor([
-                    this.findCharacter(this.name).c_primary,
-                    this.findCharacter(this.name).c_secondary
-                ]);
             }
         }).catch(error => alert('An error occurred: ' + error));
     };
@@ -173,9 +171,8 @@ class AnimateUtils {
         });
     }
     setAccessory = function(name) {
-        if (name === 'none') {
-            this.setRecolor([this.findCharacter(this.name).c_primary, this.findCharacter(this.name).c_secondary]);
-        } else {
+        this.setRecolor([this.findCharacter(this.name).c_primary, this.findCharacter(this.name).c_secondary]);
+        if (name !== 'none') {
             let character = this.findCharacter(this.name);
             var c = document.createElement('canvas');
             var ctx = c.getContext("2d");
@@ -185,12 +182,14 @@ class AnimateUtils {
             c.height = h;
             let layer = this.store_accessories[name].image;
             let coord = this.store_coords.accessory.characters[character.name].coord;
+            // So it doesn't do the same exact thing 26 times :)
+            let recoloredAccessory = this.recolorImage(layer, [character.c_tertiary, character.c_quaternary])
             for (var i = 0; i < coord.length; i++) {
-                ctx.drawImage(this.recolorImage(layer, [character.c_tertiary, character.c_quaternary]), coord[i][2] * (layer.width / 2), (layer.height / 2), (layer.width / 2), (layer.height / 2), ((i % 10) * 36) + coord[i][0], coord[i][1] + (Math.floor(i / 10) * character.h), (layer.width / 2), (layer.height / 2));
+                ctx.drawImage(recoloredAccessory, coord[i][2] * (layer.width / 2), (layer.height / 2), (layer.width / 2), (layer.height / 2), ((i % 10) * 36) + coord[i][0], coord[i][1] + (Math.floor(i / 10) * character.h), (layer.width / 2), (layer.height / 2));
             }
             ctx.drawImage(this.recolorImage(this.store_characters[character.name].image, [character.c_primary, character.c_secondary]), 0, 0, w, h, 0, 0, w, h);
             for (var i = 0; i < coord.length; i++) {
-                ctx.drawImage(this.recolorImage(layer, [character.c_tertiary, character.c_quaternary]), coord[i][2] * (layer.width / 2), (layer.height * 0), (layer.width / 2), (layer.height / 2), ((i % 10) * 36) + coord[i][0], coord[i][1] + (Math.floor(i / 10) * character.h), (layer.width / 2), (layer.height / 2));
+                ctx.drawImage(recoloredAccessory, coord[i][2] * (layer.width / 2), 0, (layer.width / 2), (layer.height / 2), ((i % 10) * 36) + coord[i][0], coord[i][1] + (Math.floor(i / 10) * character.h), (layer.width / 2), (layer.height / 2));
             }
             character.accessory = name;
             character.canvas = c;
@@ -438,7 +437,6 @@ class AnimateUtils {
             var imageData = ctx.getImageData(0, 0, w, h);
             
             var character = this.findCharacter(this.name);
-            console.log(character.darknessOffset[0]);
             let newColors1 = this.adjustColors(colors, this.darkness * character.darknessOffset[0], 0.30, 0.45, character.hueShift[0]);
             let newColors2 = this.adjustColors(colors, this.darkness * character.darknessOffset[1], 0.35, 0.60, character.hueShift[1]);
             let newColors3 = this.adjustColors(colors, this.darkness * character.darknessOffset[2], 0.40, 0.75, character.hueShift[2]);
