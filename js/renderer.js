@@ -9,6 +9,10 @@ ipcRenderer.on('window-size', (event, size) => {
     }
 });
 
+// Prevent page from cutting itself off on reload or page change
+// This wasn't as big of an issue before multiple pages were added
+document.querySelector('.desktop-ena').style.height = `${window.outerHeight}px`;
+
 var paused = false;
 var ponify = null;
 
@@ -94,9 +98,9 @@ imageUtils.loadImages(sprites).then((imgs) => {
         let currentBackground = await ipcRenderer.invoke('get-background');
         document.querySelector('.character-preview-box').style.backgroundColor = currentBackground;
     }
-    
+
     getBackground();
-    
+
     characterPreview.setUsername('^0Select a Character');
     characterPreview.setFontImage(imgs.main);
     characterPreview.setTinyImage(imgs.tiny);
@@ -202,8 +206,8 @@ function updateOptionCharacters() {
     const windows = ipcRenderer.sendSync('get-window-id');
     if (windows.length === (document.querySelector('#characters').length - 1)) { return; }
     characters.innerHTML = '<option value="-1" disabled selected>Select a Character</option>';
-    
-    windows.forEach(id => {    
+
+    windows.forEach(id => {
         var option = document.createElement('option');
         option.value = id;
         option.text = ipcRenderer.sendSync('get-character-state', id).characterName + `#${generateNumber(id)}`;
@@ -277,7 +281,7 @@ const releaseWakeLock = async () => {
     }
 };
 
-document.querySelector('#toggle-animation').onclick = function() {
+document.querySelector('#toggle-animation').onclick = function () {
     switch (paused) {
         case true:
             characterPreview.onInit();

@@ -1,4 +1,4 @@
-const { app, screen, ipcMain, Menu, Tray, nativeImage, BrowserWindow } = require('electron');
+const { app, screen, ipcMain, Menu, Tray, nativeImage, BrowserWindow, dialog } = require('electron');
 const { setActions } = require('./actions');
 const { setPhysics } = require('./physics');
 const { getRandomNumber } = require('./utils');
@@ -82,6 +82,10 @@ loadPreferences().then(() => {
     changeScale(currentScale);
 });
 
+app.on('before-quit', () => {
+    settings.destroy()
+})
+
 ipcMain.handle('get-background', async (event) => {
     try {
         let rawPreferences = fs.readFileSync(configPath, 'utf-8');
@@ -118,6 +122,11 @@ ipcMain.on('channel1', (event, arg) => {
         }
     }
 });
+
+// Allow dialog box from settings page
+ipcMain.on('dialog', (event, arg) => {
+    event.returnValue = dialog.showMessageBoxSync(settings,arg)
+})
 
 ipcMain.on('right-click', (event, arg) => {
     const win = BrowserWindow.fromWebContents(event.sender);

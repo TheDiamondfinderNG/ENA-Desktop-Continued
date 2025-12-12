@@ -80,8 +80,10 @@
 															<menu-bar>
 																<nav role="navigation" class="navbar navbar-expand">
 																	<div class="d-none d-md-block">
-																		<a href="/" class="active pixelart logo" aria-current="page">
-																			<img hidden alt="Ena Town" width="266" height="65" class="pixelart logo-large"
+																		<a href="/" class="active pixelart logo"
+																			aria-current="page">
+																			<img hidden alt="Ena Town" width="266"
+																				height="65" class="pixelart logo-large"
 																				src="./img/logo-large.png">
 																		</a>
 																	</div>
@@ -89,17 +91,20 @@
 																		<div class="navbar-nav ms-auto">
 																			<menu-item route="/" name="Home">
 																				<div class="navbar-link active">
-																					<a href="#" class="active" aria-current="page">Home</a>
+																					<a class="active"
+																						aria-current="page">Home</a>
 																				</div>
 																			</menu-item>
 																			<menu-item route="/about" name="About">
 																				<div class="navbar-link">
-																					<a href="#about" class="">Settings</a>
+																					<a onclick="window.open('settings.html', '_self')"
+																						class="">Settings</a>
 																				</div>
 																			</menu-item>
 																			<menu-item route="/save" name="Save">
 																				<div class="navbar-link">
-																					<a href="#save" class="">Save</a>
+																					<a onclick="window.open('save.html', '_self')"
+																						class="">Save</a>
 																				</div>
 																			</menu-item>
 																		</div>
@@ -569,7 +574,7 @@
 																	</div>
 																</div>
 															</div>
-														</div>
+														</main>
 														<div class="text-center text-muted">
 															<div class="tinyface"></div>
 														</div>
@@ -610,6 +615,18 @@
 	<script src="js/renderer.js"></script>
 	<script src="js/fixToTop.js"></script>
 	<script>
+		window.addEventListener('beforeunload', (e) => {
+			console.log(e)
+
+			if (document.querySelector("#save-btn").disabled)
+				return
+
+			let dialogResult = ipcRenderer.sendSync("dialog", { message: "This character hasn't been saved yet, do you want to continue?", type: "warning", buttons: ["Yes", "No"] })
+			// console.log(e.returnValue)
+			if (dialogResult != 0)
+				e.returnValue = ""
+		})
+
 		const allowCustomShadows = document.querySelector('#allow-custom-shadows');
 		const shadowIntensity = document.querySelector('#shadow-intensity');
 		allowCustomShadows.checked = ipcRenderer.sendSync('get-allow-customs');
