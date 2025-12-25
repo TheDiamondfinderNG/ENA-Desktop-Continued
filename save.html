@@ -112,7 +112,11 @@
 																</nav>
 															</menu-bar>
 														</div>
-														<main class="row"></main>
+														<main class="row">
+															<div class="btn btn-dark" id="new-save">
+																<span>+ New Save</span>
+															</div>
+														</main>
 														<div class="text-center text-muted">
 															<div class="tinyface"></div>
 														</div>
@@ -150,7 +154,346 @@
 	<script src="js/fontUtils.js"></script>
 	<script src="js/ponyUtils.js"></script>
 	<script src="js/fixToTop.js"></script>
+	<script src="js/pageUtils.js"></script>
 	<script>
+		let windowContainer = document.querySelector(".window-container"),
+			saveSlots = document.querySelector("main"),
+			saveBounds = saveSlots.getBoundingClientRect(),
+			windowScroll = windowContainer.scrollTop;
+
+		windowContainer.addEventListener("scroll", () => { windowScroll = windowContainer.scrollTop })
+
+		function updateSaveBounds() {
+			saveBounds = saveSlots.getBoundingClientRect();
+		}
+
+		let initSave = save => {
+			updateSaveBounds()
+			save.addEventListener('click', (e) => {
+				releaseSave()
+				if (!(e.target.matches(".save-slot") || e.target.matches(".save-top"))) return
+				let open = document.querySelector(".open")
+				if (open && open != save)
+					document.querySelector(".open").classList.remove('open')
+				if (!e.target.matches(".save-slot .btn")) save.classList.toggle('open')
+			})
+
+			// Vibe coding? Nah, I do it the ANCIENT way
+			// Stole (and heavily modified) this dragging function from w3schools
+			// I promise I'm proficient in this language, just a little lazy
+			let pos1 = 0,
+				pos2 = 0,
+				dummy = null
+			save.addEventListener('mousedown', (e) => {
+				e = e || window.event;
+				if (!(e.target.matches(".save-slot") || e.target.matches(".save-top"))) return
+				e.preventDefault();
+				pos2 = e.clientY;
+				document.addEventListener("mousemove", mouseUpdate)
+			})
+
+			function mouseUpdate(e) {
+				e = e || window.event;
+				if ((Math.abs(e.movementY) > 1) && !save.classList.contains("dragging") && !save.classList.contains("favorite")) {
+					save.classList.add("dragging")
+					save.classList.remove("open")
+					dummy = document.createElement('div')
+					dummy.className = "save-slot-dummy"
+					save.insertAdjacentElement("afterend", dummy)
+				}
+				if (!dummy) return
+				if (e.buttons % 2 == 0) {
+					releaseSave()
+					return
+				}
+				
+				e.preventDefault();
+				let dummyBounds = dummy.getBoundingClientRect()
+				let dummyPadding = dummy.computedStyleMap().get("padding-bottom").value
+
+				if (dummyBounds.top - dummyPadding > pos2 && !dummy.previousSibling.matches(".favorite, #new-save")) {
+					saveSlots.insertBefore(dummy, dummy.previousSibling)
+				} else if (dummyBounds.bottom + dummyPadding < pos2 && !saveSlots.querySelector(".save-slot-dummy:last-child")) {
+					saveSlots.insertBefore(dummy.nextSibling, dummy)
+				}
+
+				pos1 = pos2 - e.clientY
+				pos2 = e.clientY;
+				save.style.top = Math.min(pos2 + windowScroll, saveBounds.bottom) - 100 + "px";
+			}
+
+
+
+			let releaseSave = () => {
+				document.removeEventListener("mousemove", mouseUpdate)
+				if (!dummy) return
+				let saveSlots = document.querySelector("main")
+				saveSlots.replaceChild(save, dummy)
+				save.classList.remove("dragging")
+				dummy = null
+			}
+			document.addEventListener('mouseup', releaseSave)
+
+			document.addEventListener("blur", releaseSave)
+
+			// Prevent newlines in the label
+			let labelElement = save.querySelector('.label')
+			labelElement.addEventListener("keydown", (e) => {
+				if (e.keyCode == 13) {
+					e.preventDefault();
+					labelElement.blur()
+					return false;
+				}
+			})
+
+			labelElement.addEventListener("blur", (e) => {
+				labelElement.contentEditable = "false"
+				labelElement.scrollLeft = 0
+				let labelText = labelElement.innerText
+				let saveNumber = 0
+				let saveLabels = []
+
+				labelText = labelText.trim()
+				labelElement.innerText = labelText
+
+				document.querySelectorAll(".save-slot .label").forEach((slotLabel) => {
+					if (slotLabel != labelElement)
+						saveLabels.push(slotLabel.innerText)
+				})
+
+				labelText = saveLabels.includes(labelText) ? labelText + " (1)" : labelText
+
+				while (saveLabels.includes(labelText)) {
+					saveNumber += 1
+					labelText = labelText.replace(/\(\d\)/, `(${saveNumber})`)
+				}
+
+				if (labelText == "") {
+					labelText = "Save 0"
+					saveLabels.push(labelText)
+
+					while (saveLabels.includes(labelText)) {
+						saveNumber += 1
+						labelText = labelText.replace(/\d+/, saveNumber)
+					}
+				}
+
+				labelElement.innerText = labelText
+			})
+
+			save.querySelector('.remove-button').addEventListener('click', () => {
+				save.remove()
+				updateSaveBounds()
+			})
+
+			save.querySelector('.edit-button').onclick = (e) => {
+				labelElement.contentEditable = "plaintext-only"
+				labelElement.focus()
+				// Select text
+				let selection = window.getSelection();
+				let range = document.createRange();
+				range.selectNodeContents(labelElement);
+				selection.removeAllRanges();
+				selection.addRange(range);
+			}
+
+			save.querySelector('.copy-button').onclick = (e) => {
+				let clonedSave = save.cloneNode(true)
+				clonedSave.classList = "btn btn-dark save-slot"
+				let labelText = clonedSave.querySelector('.label').innerText
+				let saveNumber = 0
+				let saveLabels = [labelText]
+				document.querySelectorAll(".save-slot .label").forEach((slotLabel) => {
+					saveLabels.push(slotLabel.innerText)
+				})
+				labelText = "Copy 1 of " + labelText
+
+				while (saveLabels.includes(clonedSave.querySelector('.label').innerText)) {
+					saveNumber += 1
+					clonedSave.querySelector('.label').innerText = labelText.replace(/(?<=Copy )\d+/, saveNumber)
+				}
+				save.insertAdjacentElement('afterEnd', clonedSave)
+				initSave(clonedSave)
+			}
+
+			save.querySelectorAll('.favorite-button').forEach(fav => {
+				fav.addEventListener('click', () => {
+					if (document.querySelector(".favorite") && document.querySelector(".favorite") != save) {
+						document.querySelector(".favorite").classList.remove("favorite")
+					}
+					if (save.classList.toggle("favorite")) {
+						document.querySelector('#new-save').insertAdjacentElement('afterEnd', save)
+					}
+				})
+			})
+		}
+		let newSaveButton = document.querySelector('#new-save')
+		newSaveButton.addEventListener('click', (e) => {
+			let saveWrapper = document.createElement('div')
+			saveWrapper.innerHTML = `<div class="btn btn-dark save-slot">
+										<span class="save-top">
+											<span class="label">Save 1</span>
+											<button aria-label="Edit label"
+												class="btn edit-button">
+												<fa-icon class="ng-fa-icon">
+													<svg role="img" aria-hidden="true"
+														focusable="false" data-prefix="fas"
+														data-icon="pencil"
+														class="svg-inline--fa fa-pencil fa-fw"
+														xmlns="http://www.w3.org/2000/svg"
+														viewBox="0 0 512 512">
+														<path fill="currentColor"
+															d="M36.4 353.2c4.1-14.6 11.8-27.9 22.6-38.7l181.2-181.2 33.9-33.9c16.6 16.6 51.3 51.3 104 104l33.9 33.9-33.9 33.9-181.2 181.2c-10.7 10.7-24.1 18.5-38.7 22.6L30.4 510.6c-8.3 2.3-17.3 0-23.4-6.2S-1.4 489.3 .9 481L36.4 353.2zm55.6-3.7c-4.4 4.7-7.6 10.4-9.3 16.6l-24.1 86.9 86.9-24.1c6.4-1.8 12.2-5.1 17-9.7L91.9 349.5zm354-146.1c-16.6-16.6-51.3-51.3-104-104L308 65.5C334.5 39 349.4 24.1 352.9 20.6 366.4 7 384.8-.6 404-.6S441.6 7 455.1 20.6l35.7 35.7C504.4 69.9 512 88.3 512 107.4s-7.6 37.6-21.2 51.1c-3.5 3.5-18.4 18.4-44.9 44.9z">
+														</path>
+													</svg>
+												</fa-icon>
+											</button>
+											<button aria-label="Favorite"
+													class="btn favorite-button">
+													<fa-icon class="ng-fa-icon">
+														<svg role="img"
+															focusable="false" data-prefix="fas"
+															data-icon="star"
+															class="svg-inline--fa fa-star fa-fw"
+															xmlns="http://www.w3.org/2000/svg"
+															viewBox="0 0 576 512">
+															<path fill="currentColor"
+																d="M309.5-18.9c-4.1-8-12.4-13.1-21.4-13.1s-17.3 5.1-21.4 13.1L193.1 125.3 33.2 150.7c-8.9 1.4-16.3 7.7-19.1 16.3s-.5 18 5.8 24.4l114.4 114.5-25.2 159.9c-1.4 8.9 2.3 17.9 9.6 23.2s16.9 6.1 25 2L288.1 417.6 432.4 491c8 4.1 17.7 3.3 25-2s11-14.2 9.6-23.2L441.7 305.9 556.1 191.4c6.4-6.4 8.6-15.8 5.8-24.4s-10.1-14.9-19.1-16.3L383 125.3 309.5-18.9z">
+															</path>
+														</svg>
+													</fa-icon>
+												</button>
+											<span class="btn-group">
+												<button aria-label="Save current"
+													class="btn btn-info save-button">
+													<fa-icon class="ng-fa-icon">
+														<svg role="img" aria-hidden="true"
+															focusable="false" data-prefix="fas"
+															data-icon="floppy-disk"
+															class="svg-inline--fa fa-floppy-disk fa-fw"
+															xmlns="http://www.w3.org/2000/svg"
+															viewBox="0 0 512 512">
+															<path fill="currentColor"
+																d="M64 32C28.7 32 0 60.7 0 96L0 416c0 35.3 28.7 64 64 64l320 0c35.3 0 64-28.7 64-64l0-242.7c0-17-6.7-33.3-18.7-45.3L352 50.7C340 38.7 323.7 32 306.7 32L64 32zm32 96c0-17.7 14.3-32 32-32l160 0c17.7 0 32 14.3 32 32l0 64c0 17.7-14.3 32-32 32l-160 0c-17.7 0-32-14.3-32-32l0-64zM224 288a64 64 0 1 1 0 128 64 64 0 1 1 0-128z">
+															</path>
+														</svg>
+													</fa-icon>
+												</button>
+												<button aria-label="Copy save"
+													class="btn btn-info copy-button">
+													<fa-icon class="ng-fa-icon">
+														<svg role="img" aria-hidden="true"
+															focusable="false" data-prefix="fas"
+															data-icon="clone"
+															class="svg-inline--fa fa-clone fa-fw"
+															xmlns="http://www.w3.org/2000/svg"
+															viewBox="0 0 512 512">
+															<path fill="currentColor"
+																d="M288 448l-224 0 0-224 48 0 0-64-48 0c-35.3 0-64 28.7-64 64L0 448c0 35.3 28.7 64 64 64l224 0c35.3 0 64-28.7 64-64l0-48-64 0 0 48zm-64-96l224 0c35.3 0 64-28.7 64-64l0-224c0-35.3-28.7-64-64-64L224 0c-35.3 0-64 28.7-64 64l0 224c0 35.3 28.7 64 64 64z">
+															</path>
+														</svg>
+													</fa-icon>
+												</button>
+												<button aria-label="Delete save"
+													class="btn btn-danger remove-button">
+													<fa-icon class="ng-fa-icon">
+														<svg role="img" aria-hidden="true"
+															focusable="false" data-prefix="fas"
+															data-icon="trash"
+															class="svg-inline--fa fa-trash fa-fw"
+															xmlns="http://www.w3.org/2000/svg"
+															viewBox="0 0 448 512">
+															<path fill="currentColor"
+																d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3 0 46.3-19.7 47.9-45L416 128z">
+															</path>
+														</svg>
+													</fa-icon>
+												</button>
+											</span>
+										</span>
+										<span class="save-bottom">
+											<canvas class="save-previews">
+											</canvas>
+											<span class="btn-group">
+												<button aria-label="Favorite"
+													class="btn favorite-button">
+													<fa-icon class="ng-fa-icon">
+														<svg role="img"
+															focusable="false" data-prefix="fas"
+															data-icon="star"
+															class="svg-inline--fa fa-star fa-fw"
+															xmlns="http://www.w3.org/2000/svg"
+															viewBox="0 0 576 512">
+															<path fill="currentColor"
+																d="M309.5-18.9c-4.1-8-12.4-13.1-21.4-13.1s-17.3 5.1-21.4 13.1L193.1 125.3 33.2 150.7c-8.9 1.4-16.3 7.7-19.1 16.3s-.5 18 5.8 24.4l114.4 114.5-25.2 159.9c-1.4 8.9 2.3 17.9 9.6 23.2s16.9 6.1 25 2L288.1 417.6 432.4 491c8 4.1 17.7 3.3 25-2s11-14.2 9.6-23.2L441.7 305.9 556.1 191.4c6.4-6.4 8.6-15.8 5.8-24.4s-10.1-14.9-19.1-16.3L383 125.3 309.5-18.9z">
+															</path>
+														</svg>
+													</fa-icon>
+												</button>
+												<button aria-label="Add Characters"
+													class="btn btn-info add-button">
+													<fa-icon class="ng-fa-icon">
+														<svg role="img"
+															focusable="false" data-prefix="fas"
+															data-icon="plus"
+															class="svg-inline--fa fa-plus fa-fw"
+															xmlns="http://www.w3.org/2000/svg"
+															viewBox="0 0 448 512">
+															<path fill="currentColor"
+																d="M256 64c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 160-160 0c-17.7 0-32 14.3-32 32s14.3 32 32 32l160 0 0 160c0 17.7 14.3 32 32 32s32-14.3 32-32l0-160 160 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-160 0 0-160z">
+															</path>
+														</svg>
+													</fa-icon>
+												</button>
+												<button aria-label="Load"
+													class="btn btn-info load-button">
+													<fa-icon class="ng-fa-icon">
+														<svg role="img"
+															focusable="false" data-prefix="fas"
+															data-icon="arrow-up"
+															class="svg-inline--fa fa-arrow-up fa-fw"
+															xmlns="http://www.w3.org/2000/svg"
+															viewBox="0 0 384 512">
+															<path fill="currentColor"
+																d="M214.6 17.4c-12.5-12.5-32.8-12.5-45.3 0l-160 160c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L160 117.3 160 488c0 17.7 14.3 32 32 32s32-14.3 32-32l0-370.7 105.4 105.4c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3l-160-160z">
+															</path>
+														</svg>
+													</fa-icon>
+												</button>
+											</span>
+										</span>
+									</div>`
+			let save = saveWrapper.querySelector('div')
+			let clone = save.cloneNode(true)
+			let label = "Save 1"
+			let num = 0
+			let saveLabels = []
+			document.querySelectorAll(".save-slot .label").forEach((slotLabel) => {
+				saveLabels.push(slotLabel.innerText)
+			})
+			num = 1
+
+			while (saveLabels.includes(clone.querySelector('.label').innerText)) {
+				num += 1
+				clone.querySelector('.label').innerText = label.replace(/\d+$/, num)
+			}
+			(document.querySelector(".favorite") || newSaveButton).insertAdjacentElement('afterEnd', clone)
+			initSave(clone)
+		})
+		// document.querySelectorAll('.save-slot').forEach(initSave)
+
+		// document.querySelectorAll('.edit-button').forEach(button => {
+		// 	button.addEventListener('click', (e) => {
+		// 		let element = e.srcElement
+		// 		while (!element.matches(".btn.btn-info.copy-button"))
+		// 			element = element.parentElement
+		// 		let clone = element.parentElement.cloneNode(true)
+		// 		let label = clone.querySelector('span').innerText
+		// 		let num = label.match(/\d+$/)[0]
+		// 		label = label.replace(/\d+$/, Number(num)+1)
+		// 		console.log(label)
+		// 	})
+		// })
 	</script>
 </body>
 

@@ -860,6 +860,10 @@ svg:not(:root).svg-inline--fa {
     transition: color .15s ease-in-out, background-color .15s ease-in-out, border-color .15s ease-in-out, box-shadow .15s ease-in-out, -webkit-box-shadow .15s ease-in-out;
 }
 
+.btn:focus:not(:focus-visible) {
+  outline: 0;
+}
+
 .btn-dark {
     background-color: #1f1f1f;
     border: 1px solid #484848;
@@ -881,6 +885,159 @@ svg:not(:root).svg-inline--fa {
 
 .btn.btn-dark {
     color: #ddd;
+}
+
+.save-slot, #new-save, .save-slot-dummy {
+    text-align: left;
+    font-weight: 400;
+    font-size: 1.5rem;
+    height: 4rem;
+    margin: 1rem;
+    padding: 0.75rem 1.5rem !important;
+    border-radius: 0.5rem !important;
+    display: flex;
+    flex-direction: column;
+    overflow-y: hidden;
+    cursor: pointer;
+    z-index: 1;
+    transition: height 0.4s, scale 0.4s;
+}
+
+.save-slot.open {
+    height: 5.75em;
+    background: #222;
+}
+
+.save-slot * {
+    z-index: 2;
+}
+
+.save-slot .save-top {
+    width: 100%;
+    height: min-content;
+    display: flex;
+}
+
+
+.save-slot .save-bottom {
+    border-top: #555 solid 1px;
+    height: 3em;
+    margin-top: 1rem;
+    padding: 1rem 0;
+    padding: auto;
+    display: flex;
+}
+
+.save-slot .save-previews {
+    display: inline-block;
+    background-color: red;
+    width: 100%;
+    height: 3.5rem;
+}
+
+
+.save-slot .label {
+    overflow-x: hidden;
+    overflow-y: hidden;
+    white-space: nowrap;
+}
+.save-slot .label:not(:focus) {
+    overflow-x: scroll;
+    text-overflow: ellipsis;
+}
+
+.save-slot .label::-webkit-scrollbar {
+    display: none;
+}
+
+.save-slot .save-bottom .btn-group {
+    width: 162px;
+}
+
+.save-slot .save-bottom .btn-group .btn-info {
+    font-size: 1rem;
+    width: inherit;
+    background-color: green;
+}
+
+.save-slot .btn-group .btn {
+    float: right;
+    border-radius: 4px !important;
+    margin-left: 12px !important;
+}
+
+.save-slot .btn-group {
+    margin-left: auto;
+}
+
+.save-slot .btn svg {
+    width: 1em;
+}
+
+.edit-button, .favorite-button {
+    color: #848484;
+    padding: 0;
+    padding-left: 1em;
+}
+
+.edit-button fa-icon, .favorite-button fa-icon{
+    font-size: 1.25rem;
+}
+
+.save-slot:not(.favorite) .save-top .favorite-button {
+    display: none;
+}
+
+.save-bottom .favorite-button {
+    padding: 0 0.5rem;
+    vertical-align: middle;
+    transition: all 0.1s;
+}
+
+.save-bottom .favorite-button fa-icon{
+    font-size: 1.5rem;
+}
+
+.favorite-button:hover {
+    color: #ddd;
+}
+
+.save-slot.favorite .favorite-button {
+    color: #ff0 !important;
+}
+
+.save-slot.favorite .favorite-button:hover {
+    scale: 1.25
+}
+
+.edit-button:hover svg {
+    color: #ddd;
+}
+
+
+.save-slot.dragging {
+    cursor: grabbing;
+    scale: 1.1;
+    position: absolute;
+    opacity: 50%;
+    z-index: 99;
+}
+
+.save-slot-dummy {
+    visibility: hidden;
+}
+
+#new-save {
+    text-align: center;
+    border-style: dashed !important;
+    background: #1f1f1f1f;
+    display: block  ;
+}
+
+#new-save:hover {
+    background: #222;
+    padding: 0.5rem !important;
+    font-size: 1.75rem;
 }
 
 .input-group>.input-group-append>div>.btn {
@@ -939,6 +1096,23 @@ svg:not(:root).svg-inline--fa {
 .btn-danger.remove-button:active {
     background: #ae423f;
     border-color: #a33e3b;
+}
+
+.btn-info {
+    background: #4f7bd8;
+    border: 1px solid transparent;
+    padding: 6px 12px 6px 12px;
+    margin: 0 auto 0 auto;
+}
+
+.btn-info:hover {
+    background: #4267b8;
+    border-color: #3e61ac;
+}
+
+.btn-info:active {
+    background: #3e61ac;
+    border-color: #3b5da5;
 }
 
 #characters {

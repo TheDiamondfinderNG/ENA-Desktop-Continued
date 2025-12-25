@@ -337,7 +337,7 @@ characters.addEventListener('change', (event) => {
         let characterStates = ipcRenderer.sendSync('get-character-state', id);
         characterPreview.setUsername('^0' + characterStates.characterName + `#${generateNumber(id)}`);
         characterPreview.setRole('^1<MEMBER>');
-        const imgPath = path.join(__dirname, '..', 'character');
+        const imgPath = path.join(__dirname, 'character');
         let sprites = {
             character: (characterStates.custom ? imgPath + '\\' + characterStates.sprite : 'img/character/' + characterStates.sprite),
             eyes: (characterStates.custom ? imgPath + '\\' + characterStates.blink : 'img/character/' + characterStates.blink),
