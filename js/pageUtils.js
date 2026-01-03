@@ -1,5 +1,4 @@
-const { shell } = require('electron');
-
+const { shell, ipcRenderer } = require('electron');
 
 // Prevent page from cutting itself off on reload or page change
 // This wasn't as big of an issue before multiple pages were added

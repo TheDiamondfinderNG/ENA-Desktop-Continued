@@ -148,187 +148,33 @@
 			</div>
 		</div>
 	</div>
+	<script src="js/pageUtils.js"></script>
 	<script src="js/color-picker.js"></script>
 	<script src="js/dropdown.js"></script>
 	<script src="image-utils.js"></script>
 	<script src="js/fontUtils.js"></script>
 	<script src="js/ponyUtils.js"></script>
 	<script src="js/fixToTop.js"></script>
-	<script src="js/pageUtils.js"></script>
 	<script>
 		let windowContainer = document.querySelector(".window-container"),
 			saveSlots = document.querySelector("main"),
 			saveBounds = saveSlots.getBoundingClientRect(),
 			windowScroll = windowContainer.scrollTop;
 
+		let emptySave = {
+			label: "Save 1",
+			favorite: false,
+			characters: {}
+		}
 		windowContainer.addEventListener("scroll", () => { windowScroll = windowContainer.scrollTop })
 
 		function updateSaveBounds() {
 			saveBounds = saveSlots.getBoundingClientRect();
 		}
 
-		let initSave = save => {
-			updateSaveBounds()
-			save.addEventListener('click', (e) => {
-				releaseSave()
-				if (!(e.target.matches(".save-slot") || e.target.matches(".save-top"))) return
-				let open = document.querySelector(".open")
-				if (open && open != save)
-					document.querySelector(".open").classList.remove('open')
-				if (!e.target.matches(".save-slot .btn")) save.classList.toggle('open')
-			})
 
-			// Vibe coding? Nah, I do it the ANCIENT way
-			// Stole (and heavily modified) this dragging function from w3schools
-			// I promise I'm proficient in this language, just a little lazy
-			let pos1 = 0,
-				pos2 = 0,
-				dummy = null
-			save.addEventListener('mousedown', (e) => {
-				e = e || window.event;
-				if (!(e.target.matches(".save-slot") || e.target.matches(".save-top"))) return
-				e.preventDefault();
-				pos2 = e.clientY;
-				document.addEventListener("mousemove", mouseUpdate)
-			})
-
-			function mouseUpdate(e) {
-				e = e || window.event;
-				if ((Math.abs(e.movementY) > 1) && !save.classList.contains("dragging") && !save.classList.contains("favorite")) {
-					save.classList.add("dragging")
-					save.classList.remove("open")
-					dummy = document.createElement('div')
-					dummy.className = "save-slot-dummy"
-					save.insertAdjacentElement("afterend", dummy)
-				}
-				if (!dummy) return
-				if (e.buttons % 2 == 0) {
-					releaseSave()
-					return
-				}
-				
-				e.preventDefault();
-				let dummyBounds = dummy.getBoundingClientRect()
-				let dummyPadding = dummy.computedStyleMap().get("padding-bottom").value
-
-				if (dummyBounds.top - dummyPadding > pos2 && !dummy.previousSibling.matches(".favorite, #new-save")) {
-					saveSlots.insertBefore(dummy, dummy.previousSibling)
-				} else if (dummyBounds.bottom + dummyPadding < pos2 && !saveSlots.querySelector(".save-slot-dummy:last-child")) {
-					saveSlots.insertBefore(dummy.nextSibling, dummy)
-				}
-
-				pos1 = pos2 - e.clientY
-				pos2 = e.clientY;
-				save.style.top = Math.min(pos2 + windowScroll, saveBounds.bottom) - 100 + "px";
-			}
-
-
-
-			let releaseSave = () => {
-				document.removeEventListener("mousemove", mouseUpdate)
-				if (!dummy) return
-				let saveSlots = document.querySelector("main")
-				saveSlots.replaceChild(save, dummy)
-				save.classList.remove("dragging")
-				dummy = null
-			}
-			document.addEventListener('mouseup', releaseSave)
-
-			document.addEventListener("blur", releaseSave)
-
-			// Prevent newlines in the label
-			let labelElement = save.querySelector('.label')
-			labelElement.addEventListener("keydown", (e) => {
-				if (e.keyCode == 13) {
-					e.preventDefault();
-					labelElement.blur()
-					return false;
-				}
-			})
-
-			labelElement.addEventListener("blur", (e) => {
-				labelElement.contentEditable = "false"
-				labelElement.scrollLeft = 0
-				let labelText = labelElement.innerText
-				let saveNumber = 0
-				let saveLabels = []
-
-				labelText = labelText.trim()
-				labelElement.innerText = labelText
-
-				document.querySelectorAll(".save-slot .label").forEach((slotLabel) => {
-					if (slotLabel != labelElement)
-						saveLabels.push(slotLabel.innerText)
-				})
-
-				labelText = saveLabels.includes(labelText) ? labelText + " (1)" : labelText
-
-				while (saveLabels.includes(labelText)) {
-					saveNumber += 1
-					labelText = labelText.replace(/\(\d\)/, `(${saveNumber})`)
-				}
-
-				if (labelText == "") {
-					labelText = "Save 0"
-					saveLabels.push(labelText)
-
-					while (saveLabels.includes(labelText)) {
-						saveNumber += 1
-						labelText = labelText.replace(/\d+/, saveNumber)
-					}
-				}
-
-				labelElement.innerText = labelText
-			})
-
-			save.querySelector('.remove-button').addEventListener('click', () => {
-				save.remove()
-				updateSaveBounds()
-			})
-
-			save.querySelector('.edit-button').onclick = (e) => {
-				labelElement.contentEditable = "plaintext-only"
-				labelElement.focus()
-				// Select text
-				let selection = window.getSelection();
-				let range = document.createRange();
-				range.selectNodeContents(labelElement);
-				selection.removeAllRanges();
-				selection.addRange(range);
-			}
-
-			save.querySelector('.copy-button').onclick = (e) => {
-				let clonedSave = save.cloneNode(true)
-				clonedSave.classList = "btn btn-dark save-slot"
-				let labelText = clonedSave.querySelector('.label').innerText
-				let saveNumber = 0
-				let saveLabels = [labelText]
-				document.querySelectorAll(".save-slot .label").forEach((slotLabel) => {
-					saveLabels.push(slotLabel.innerText)
-				})
-				labelText = "Copy 1 of " + labelText
-
-				while (saveLabels.includes(clonedSave.querySelector('.label').innerText)) {
-					saveNumber += 1
-					clonedSave.querySelector('.label').innerText = labelText.replace(/(?<=Copy )\d+/, saveNumber)
-				}
-				save.insertAdjacentElement('afterEnd', clonedSave)
-				initSave(clonedSave)
-			}
-
-			save.querySelectorAll('.favorite-button').forEach(fav => {
-				fav.addEventListener('click', () => {
-					if (document.querySelector(".favorite") && document.querySelector(".favorite") != save) {
-						document.querySelector(".favorite").classList.remove("favorite")
-					}
-					if (save.classList.toggle("favorite")) {
-						document.querySelector('#new-save').insertAdjacentElement('afterEnd', save)
-					}
-				})
-			})
-		}
-		let newSaveButton = document.querySelector('#new-save')
-		newSaveButton.addEventListener('click', (e) => {
+		// Create a save slot and return its data
+		function createSave(e, data = emptySave) {
 			let saveWrapper = document.createElement('div')
 			saveWrapper.innerHTML = `<div class="btn btn-dark save-slot">
 										<span class="save-top">
@@ -465,35 +311,301 @@
 									</div>`
 			let save = saveWrapper.querySelector('div')
 			let clone = save.cloneNode(true)
-			let label = "Save 1"
-			let num = 0
+			let labelText = data.label
+			let saveNumber = 1
 			let saveLabels = []
+
 			document.querySelectorAll(".save-slot .label").forEach((slotLabel) => {
 				saveLabels.push(slotLabel.innerText)
 			})
-			num = 1
 
-			while (saveLabels.includes(clone.querySelector('.label').innerText)) {
-				num += 1
-				clone.querySelector('.label').innerText = label.replace(/\d+$/, num)
+			let slotTarget = (document.querySelector(".favorite") || newSaveButton)
+
+			if (labelText.match(/Save \d+/))
+				while (saveLabels.includes(labelText)) {
+					saveNumber += 1
+					labelText = labelText.replace(/\d+/, saveNumber)
+					if (saveNumber > 100000) {
+						throw new Error("There's not that many saves");
+					}
+				}
+			if (!(labelText in saveData)) {
+				let slotData = { ...data }
+				let saveDataOld = { ...saveData }
+
+				saveData = {}
+				delete slotData.label
+
+				if (!document.querySelector(".favorite"))
+					saveData[labelText] = { ...slotData }
+				document.querySelectorAll(".save-slot .label").forEach((slotLabel) => {
+					let l = slotLabel.innerText
+					saveData[l] = structuredClone(saveDataOld[l])
+					console.log(slotLabel.parentElement.parentElement.matches(".favorite"))
+					if (slotLabel.parentElement.parentElement.matches(".favorite")) {
+						saveData[labelText] = { ...slotData }
+					}
+
+				})
+
+				ipcRenderer.send("update-saves", saveData)
+				ipcRenderer.sendSync("save-current-characters", labelText)
+				saveData = ipcRenderer.sendSync("fetch-saves")
+
 			}
-			(document.querySelector(".favorite") || newSaveButton).insertAdjacentElement('afterEnd', clone)
-			initSave(clone)
-		})
-		// document.querySelectorAll('.save-slot').forEach(initSave)
 
-		// document.querySelectorAll('.edit-button').forEach(button => {
-		// 	button.addEventListener('click', (e) => {
-		// 		let element = e.srcElement
-		// 		while (!element.matches(".btn.btn-info.copy-button"))
-		// 			element = element.parentElement
-		// 		let clone = element.parentElement.cloneNode(true)
-		// 		let label = clone.querySelector('span').innerText
-		// 		let num = label.match(/\d+$/)[0]
-		// 		label = label.replace(/\d+$/, Number(num)+1)
-		// 		console.log(label)
-		// 	})
-		// })
+			clone.querySelector('.label').innerText = labelText;
+
+			slotTarget.insertAdjacentElement('afterEnd', clone)
+
+			if (data.favorite) clone.classList.add("favorite")
+
+			initSave(clone)
+		}
+
+		let initSave = save => {
+			updateSaveBounds()
+			save.addEventListener('click', (e) => {
+				releaseSave()
+				if (!(e.target.matches(".save-slot") || e.target.matches(".save-top"))) return
+				let open = document.querySelector(".open")
+				if (open && open != save)
+					document.querySelector(".open").classList.remove('open')
+				if (!e.target.matches(".save-slot .btn")) save.classList.toggle('open')
+			})
+
+			// Vibe coding? Nah, I do it the ANCIENT way
+			// Stole (and heavily modified) this dragging function from w3schools
+			// I promise I'm proficient in this language, just a little lazy
+			let pos1 = 0,
+				pos2 = 0,
+				dummy = null,
+				dataLabel = ""
+			save.addEventListener('mousedown', (e) => {
+				e = e || window.event;
+				if (!(e.target.matches(".save-slot") || e.target.matches(".save-top"))) return
+				e.preventDefault();
+				pos2 = e.clientY;
+				document.addEventListener("mousemove", mouseUpdate)
+			})
+
+			function mouseUpdate(e) {
+				e = e || window.event;
+				if ((Math.abs(e.movementY) > 1) && !save.classList.contains("dragging") && !save.classList.contains("favorite")) {
+					save.classList.add("dragging")
+					save.classList.remove("open")
+					dummy = document.createElement('div')
+					dummy.className = "save-slot-dummy"
+					save.insertAdjacentElement("afterend", dummy)
+				}
+				if (!dummy) return
+				if (e.buttons % 2 == 0) {
+					releaseSave()
+					return
+				}
+
+				e.preventDefault();
+				let dummyBounds = dummy.getBoundingClientRect()
+				let dummyPadding = dummy.computedStyleMap().get("padding-bottom").value
+
+				if (dummyBounds.top - dummyPadding > pos2 && !dummy.previousSibling.matches(".favorite, #new-save")) {
+					saveSlots.insertBefore(dummy, dummy.previousSibling)
+				} else if (dummyBounds.bottom + dummyPadding < pos2 && !saveSlots.querySelector(".save-slot-dummy:last-child")) {
+					saveSlots.insertBefore(dummy.nextSibling, dummy)
+				}
+
+				pos1 = pos2 - e.clientY
+				pos2 = e.clientY;
+				save.style.top = Math.min(pos2 + windowScroll, saveBounds.bottom) - 100 + "px";
+			}
+
+			// Releases the save being held
+			let releaseSave = () => {
+				// Make sure the mouse moving doesn't trigger a grab
+				document.removeEventListener("mousemove", mouseUpdate)
+				// Don't bother updating the slots if they were never moved
+				if (!dummy) return
+				let saveSlots = document.querySelector("main")
+				saveSlots.replaceChild(save, dummy)
+				save.classList.remove("dragging")
+				dummy = null
+				let saveDataOld = { ...saveData }
+				saveData = {}
+
+				document.querySelectorAll(".save-slot .label").forEach((slotLabel) => {
+					let l = slotLabel.innerText
+					saveData[l] = structuredClone(saveDataOld[l])
+				})
+
+				ipcRenderer.send("update-saves", saveData)
+			}
+
+			document.addEventListener('mouseup', releaseSave)
+
+			document.addEventListener("blur", releaseSave)
+
+			// Prevent newlines in the label
+			let labelElement = save.querySelector('.label')
+			dataLabel = labelElement.innerText
+			labelElement.addEventListener("keydown", (e) => {
+				if (e.keyCode == 13) {
+					e.preventDefault();
+					labelElement.blur()
+					return false;
+				}
+			})
+
+			labelElement.addEventListener("blur", (e) => {
+				labelElement.contentEditable = "false"
+				labelElement.scrollLeft = 0
+				let labelText = labelElement.innerText
+				let saveNumber = 0
+				let saveLabels = []
+
+				labelText = labelText.trim()
+				labelElement.innerText = labelText
+
+				document.querySelectorAll(".save-slot .label").forEach((slotLabel) => {
+					if (slotLabel != labelElement)
+						saveLabels.push(slotLabel.innerText)
+				})
+
+				labelText = saveLabels.includes(labelText) ? labelText + " (1)" : labelText
+
+				while (saveLabels.includes(labelText)) {
+					saveNumber += 1
+					labelText = labelText.replace(/\(\d\)/, `(${saveNumber})`)
+				}
+
+				if (labelText == "") {
+					labelText = "Save 0"
+					saveLabels.push(labelText)
+
+					while (saveLabels.includes(labelText)) {
+						saveNumber += 1
+						labelText = labelText.replace(/\d+/, saveNumber)
+					}
+				}
+
+				labelElement.innerText = labelText
+				let saveDataOld = { ...saveData }
+				saveData = {}
+
+				for (const save in saveDataOld) {
+					saveData[save == dataLabel ? labelText : save] = structuredClone(saveDataOld[save])
+				}
+				ipcRenderer.send("update-saves", saveData)
+
+				dataLabel = labelElement.innerText
+			})
+
+			save.querySelector('.remove-button').addEventListener('click', () => {
+				if (!confirm("Are you sure you want to delete this save? This cannot be undone"))
+					return
+				save.remove()
+				updateSaveBounds()
+				delete saveData[dataLabel]
+				ipcRenderer.send("update-saves", saveData)
+			})
+
+			save.querySelector('.edit-button').onclick = (e) => {
+				labelElement.contentEditable = "plaintext-only"
+				labelElement.focus()
+				// Select text
+				let selection = window.getSelection();
+				let range = document.createRange();
+				range.selectNodeContents(labelElement);
+				selection.removeAllRanges();
+				selection.addRange(range);
+			}
+
+			save.querySelector('.save-button').onclick = (e) => {
+				if (!confirm("Are you sure you want to override this save? This cannot be undone"))
+					return
+				ipcRenderer.send("save-current-characters", dataLabel)
+				saveData = ipcRenderer.sendSync("fetch-saves")
+			}
+
+			save.querySelector('.load-button').onclick = (e) => {
+				if (!confirm("Are you sure you want to load this save? Any unsaved characters will be lost"))
+					return
+				ipcRenderer.send("load-save", dataLabel)
+			}
+
+			save.querySelector('.add-button').onclick = (e) => {
+				
+				ipcRenderer.send("load-save", dataLabel, true)
+			}
+
+			save.querySelector('.copy-button').onclick = (e) => {
+				let clonedSave = save.cloneNode(true)
+				clonedSave.classList = "btn btn-dark save-slot"
+				let labelText = clonedSave.querySelector('.label').innerText
+				let saveNumber = 0
+				let saveLabels = [labelText]
+				document.querySelectorAll(".save-slot .label").forEach((slotLabel) => {
+					saveLabels.push(slotLabel.innerText)
+				})
+				labelText = "Copy 1 of " + labelText
+
+				while (saveLabels.includes(clonedSave.querySelector('.label').innerText)) {
+					saveNumber += 1
+					clonedSave.querySelector('.label').innerText = labelText.replace(/(?<=Copy )\d+/, saveNumber)
+				}
+
+				labelText = clonedSave.querySelector('.label').innerText
+
+				save.insertAdjacentElement('afterEnd', clonedSave)
+				initSave(clonedSave)
+
+				let saveDataOld = { ...saveData }
+				saveData = {}
+
+				document.querySelectorAll(".save-slot .label").forEach((slotLabel) => {
+					let l = slotLabel.innerText
+
+					if (labelText == l) {
+						saveData[labelText] = structuredClone(saveDataOld[saveLabels[0]])
+						saveData[labelText].favorite = false
+					}
+					else {
+						saveData[l] = structuredClone(saveDataOld[l])
+					}
+				})
+				ipcRenderer.send("update-saves", saveData)
+			}
+
+			save.querySelectorAll('.favorite-button').forEach(fav => {
+				fav.addEventListener('click', () => {
+					if (document.querySelector(".favorite") && document.querySelector(".favorite") != save) {
+						saveData[document.querySelector(".favorite .label").innerText].favorite = false
+						document.querySelector(".favorite").classList.remove("favorite")
+					}
+					let isNowFavorite = save.classList.toggle("favorite")
+					if (isNowFavorite) {
+						document.querySelector('#new-save').insertAdjacentElement('afterEnd', save)
+					}
+					saveData[save.querySelector(".label").innerText].favorite = isNowFavorite
+					ipcRenderer.send("update-saves", saveData)
+				})
+			})
+		}
+		let newSaveButton = document.querySelector('#new-save')
+		newSaveButton.addEventListener('click', createSave)
+
+
+		let saveData = ipcRenderer.sendSync("fetch-saves")
+		reverseSaves = Object.keys(saveData).reverse()
+
+		for (i in reverseSaves) {
+			try {
+				createSave(null, { "label": reverseSaves[i], ...saveData[reverseSaves[i]] })
+			} catch (err) {
+				console.error(err)
+				console.error("Save '" + reverseSaves[i] + "' corrupted")
+			}
+		}
+
 	</script>
 </body>
 

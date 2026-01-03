@@ -1,4 +1,4 @@
-const { app, screen, ipcMain, Menu, Tray, nativeImage, BrowserWindow, dialog } = require('electron');
+const { app, screen, ipcMain, dialog, shell, Menu, Tray, nativeImage, BrowserWindow } = require('electron');
 const { setActions } = require('./actions');
 const { setPhysics } = require('./physics');
 const { getRandomNumber } = require('./utils');
@@ -12,11 +12,14 @@ if (!isSecondInstance) { // Close the new instance if one is already running
     app.quit();
 }
 
+let debugMode = process.argv.includes("--debug") || process.argv.includes("-d")
+
 // We enable the following commands to fix the DPI (Scaled Screen)
 app.commandLine.appendSwitch('high-dpi-support', 'true');
 app.commandLine.appendSwitch('force-device-scale-factor', '1');
 
 const configPath = path.join(__dirname, 'preferences.json');
+const savePath = path.join(__dirname, 'saves.json');
 let tray = null;
 let currentBackground = '#90ee90' // manage.html Character Background
 let currentLanguage = 'en';
@@ -39,6 +42,7 @@ ipcMain.setMaxListeners(10);
 
 // Watermark
 console.log('\x1b[36m%s\x1b[0m', 'Desktop ENA developed by TanyaHastur, all rights reserved.');
+if(debugMode) console.log('\x1b[36m%s\x1b[0m')
 
 // Save preferences to the preferences.json file
 async function savePreferences() {
@@ -74,6 +78,76 @@ async function loadPreferences() {
         } catch (err) {
             console.error("Error loading preferences: ", err);
         }
+    }
+}
+
+// Save saves to the saves.json file
+async function updateSaves(data) {
+    try {
+        await fs.promises.writeFile(savePath, JSON.stringify(data, null, 4), "utf-8");
+    } catch (err) {
+        console.error("Error saving saves: ", err);
+    }
+}
+
+// Load saves from the saves.json file
+async function getSaves() {
+    if (fs.existsSync(savePath)) {
+        let backupPath = path.join(__dirname, 'saves_bak.json')
+        try {
+            const rawdata = await fs.promises.readFile(savePath, "utf-8");
+            let returnData = JSON.parse(rawdata);
+            await fs.promises.writeFile(backupPath, rawdata);
+            return returnData
+        } catch (err) {
+            await fs.promises.readFile(backupPath, "utf-8")
+                .then(
+                    data => {
+                        dialog.showMessageBox(
+                            null,
+                            {
+                                message: "The save files are corrupted. Would you like to attempt to load a backup?",
+                                type: "error",
+                                buttons: ["Yes", "No"]
+                            })
+                            .then(dialogResponse => {
+                                if (!dialogResponse.response)
+                                    fs.promises.writeFile(savePath, data)
+                                if (settings)
+                                    settings.reload()
+                            })
+                    }
+                )
+                .catch(
+                    () => {
+                        dialog.showMessageBox(
+                            null,
+                            {
+                                message: "The save files are corrupted and there is no backup available.\n\nWould you like to remake the save from scratch? This is irreversible\nYou may also open the saves.json file to manually troubleshoot",
+                                type: "error",
+                                noLink: true,
+                                buttons: ["Yes", "No", "Open saves.json"]
+                            })
+                            .then(dialogResponse => {
+                                ([
+                                    () => {
+                                        updateSaves({})
+                                        if (settings)
+                                            settings.reload()
+                                    },
+                                    () => { },
+                                    () => {
+                                        shell.showItemInFolder(savePath)
+                                    }
+                                ])[dialogResponse.response]()
+                            })
+
+                    });
+            console.error("Error loading saves: ", err);
+        }
+    } else {
+        updateSaves({})
+        return {}
     }
 }
 
@@ -125,7 +199,7 @@ ipcMain.on('channel1', (event, arg) => {
 
 // Allow dialog box from settings page
 ipcMain.on('dialog', (event, arg) => {
-    event.returnValue = dialog.showMessageBoxSync(settings,arg)
+    event.returnValue = dialog.showMessageBoxSync(settings, arg)
 })
 
 ipcMain.on('right-click', (event, arg) => {
@@ -196,9 +270,8 @@ ipcMain.on('pet', (event, petAmount) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     const shimejiStates = characterStates[win.id];
     shimejiStates.dx = 0
-    
     shimejiStates.lastEvent.sender.send('setClosedEyes', petAmount > 200);
-    if (petAmount > 400) {        
+    if (petAmount > 400) {
         shimejiStates.isPetting = true
         shimejiStates.lastEvent.sender.send('channel1', 'sit-' + (shimejiStates.direction === 'right' ? 'r' : 'l'));
     }
@@ -208,7 +281,6 @@ ipcMain.on('pet', (event, petAmount) => {
 ipcMain.on('stop-pet', (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     characterStates[win.id].isPetting = false
-    
     characterStates[win.id].lastEvent.sender.send('setClosedEyes', false);
 })
 
@@ -260,6 +332,45 @@ ipcMain.on('update-allow-customs', (event, bool) => {
 
 ipcMain.on('get-allow-customs', (event) => {
     event.returnValue = allowCustoms;
+});
+
+ipcMain.on('update-saves', (event, data) => {
+    updateSaves(data);
+});
+
+ipcMain.on('fetch-saves', (event) => {
+    getSaves().then((data) => {
+        event.returnValue = data;
+    })
+});
+
+ipcMain.on('save-current-characters', (event, save) => {
+    getSaves().then(saves => {
+        const saveData = saves[save]
+        saveData.characters = []
+        for (let id in characterStates) {
+            saveData.characters.push({
+                characterName: characterStates[id].characterName,
+                spriteImage: characterStates[id].sprite,
+                blinkImage: characterStates[id].blink,
+                isCustomCharacter: characterStates[id].custom,
+                accessory: characterStates[id].accessory,
+                primaryColor: characterStates[id].primary,
+                secondaryColor: characterStates[id].secondary,
+                tertiaryColor: characterStates[id].tertiary,
+                quaternaryColor: characterStates[id].quaternary,
+                frameWidth: characterStates[id].width,
+                frameHeight: characterStates[id].height
+            })
+        }
+        updateSaves(structuredClone(saves)).then(() =>
+            event.returnValue = ""
+        );
+
+    })
+});
+ipcMain.on('load-save', (event, save, append = false) => {
+    loadSave(save, append)
 });
 
 ipcMain.on('requestChangeColor', (event, id) => {
@@ -348,16 +459,7 @@ function createBrowserWindow(options) {
 }
 
 app.on('ready', () => {
-    createShimejiWindow({
-        characterName: 'Ena',
-        spriteImage: 'ena_default.png',
-        blinkImage: 'ena_blink.png',
-        isCustomCharacter: false,
-        primaryColor: '#2c5bf5',
-        secondaryColor: '#ffe308',
-        frameWidth: 36,
-        frameHeight: 52
-    });
+    loadSave()
     onInit();
 });
 
@@ -378,7 +480,7 @@ function createTray() {
 
         settings.setFullScreenable(false); // Disable Fullscreen
         settings.webContents.on('before-input-event', (e, input) => {
-            if ((input.control && input.shift && input.key === 'I')) {
+            if ((input.control && input.shift && input.key === 'I') && debugMode) {
                 e.preventDefault(); // Disabled DevTool
             }
         });
@@ -579,7 +681,7 @@ function updateTray() {
 
                 settings.setFullScreenable(false);
                 settings.webContents.on('before-input-event', (e, input) => {
-                    if ((input.control && input.shift && input.key === 'I')) {
+                    if ((input.control && input.shift && input.key === 'I') && debugMode) {
                         e.preventDefault(); // Disabled DevTools
                     }
                 });
@@ -766,7 +868,6 @@ function setCollision(win) {
         // Not in the void, reset timer
         characterStates[win.id].voidTimer = -1
 
-        // 
         characterStates[win.id].lastRoofY = bounds.bounds.y
         characterStates[win.id].lastFloorY = bounds.bounds.y + (!winIsFullscreen ? bounds.workAreaSize.height : bounds.size.height)
         characterStates[win.id].lastLeftWall = bounds.bounds.x
@@ -1195,7 +1296,7 @@ function buildMenu(win) {
 
                 settings.setFullScreenable(false);
                 settings.webContents.on('before-input-event', (e, input) => {
-                    if ((input.control && input.shift && input.key === 'I')) {
+                    if ((input.control && input.shift && input.key === 'I') && debugMode) {
                         e.preventDefault(); // Disabled DevTools
                     }
                 });
@@ -1231,7 +1332,7 @@ function createCharacterState(options) {
     return {
         chaseCursor: false,
         scale: currentScale,
-        accessory: options.characterId ? characterStates[options.characterId].accessory : 'none',
+        accessory: options.characterId ? characterStates[options.characterId].accessory : (options.accessory ?? 'none'),
         dx: (getRandomNumber() === 1 ? (1 * currentScale) : (-1 * currentScale)),
         dy: 3 * currentScale,
         width: options.frameWidth ?? 36,
@@ -1256,8 +1357,8 @@ function createCharacterState(options) {
         isPetting: false,
         primary: options.characterId ? characterStates[options.characterId].primary : (options.primaryColor ?? '#2c5bf5'),
         secondary: options.characterId ? characterStates[options.characterId].secondary : (options.secondaryColor ?? '#ffe308'),
-        tertiary: options.characterId ? characterStates[options.characterId].tertiary : '#2c5bf5',
-        quaternary: options.characterId ? characterStates[options.characterId].quaternary : '#ffe308',
+        tertiary: options.characterId ? characterStates[options.characterId].tertiary : (options.tertiaryColor ?? '#2c5bf5'),
+        quaternary: options.characterId ? characterStates[options.characterId].quaternary : (options.quaternaryColor ?? '#ffe308'),
         hueShift: options.hueShift ?? [0, 0, 0],
         darknessOffset: options.darknessOffset ?? [0.85, 1.45, 1.60],
         v_speed_x: 0,
@@ -1271,6 +1372,42 @@ function createCharacterState(options) {
         lastEvent: null,
         menu: null
     };
+}
+
+async function loadSave(saveLabel = null, append = false) {
+    let saves = await getSaves()
+    
+    favoriteCheck:
+    if (saveLabel === null) {
+        for (let save in saves) {
+            if (saves[save].favorite) {
+                console.log(`Save "${save}" loaded`)
+                saveLabel = save
+                break favoriteCheck;
+            }
+        };
+        // Only runs when there's no favorite
+        console.log(`No favorite, loaded default`)
+        createShimejiWindow({
+            characterName: 'Ena',
+            spriteImage: 'ena_default.png',
+            blinkImage: 'ena_blink.png',
+            isCustomCharacter: false,
+            primaryColor: '#2c5bf5',
+            secondaryColor: '#ffe308',
+            frameWidth: 36,
+            frameHeight: 52
+        });
+        return
+    }
+    if (!append) {
+        for (let id in characterStates) {
+            BrowserWindow.fromId(Number(id)).close()
+        }
+    }
+    for (let i in saves[saveLabel].characters) {
+        createShimejiWindow({ ...saves[saveLabel].characters[i] });
+    }
 }
 
 function createShimejiWindow(options) {
@@ -1313,8 +1450,8 @@ function createShimejiWindow(options) {
     });
 
     win.webContents.on('before-input-event', (e, input) => {
-        if ((input.control && input.shift && input.key === 'I')) {
-            // e.preventDefault(); // Disabled DevTools
+        if ((input.control && input.shift && input.key === 'I') && debugMode) {
+            e.preventDefault(); // Disabled DevTools
         }
     });
     // Disabled Fullscreen

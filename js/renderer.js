@@ -1,4 +1,3 @@
-const { app, ipcRenderer, shell } = require('electron');
 const path = require('path');
 
 ipcRenderer.on('window-size', (event, size) => {
@@ -8,10 +7,6 @@ ipcRenderer.on('window-size', (event, size) => {
         element.style.height = `${size[1]}px`;
     }
 });
-
-// Prevent page from cutting itself off on reload or page change
-// This wasn't as big of an issue before multiple pages were added
-document.querySelector('.desktop-ena').style.height = `${window.outerHeight}px`;
 
 var paused = false;
 var ponify = null;
@@ -417,15 +412,4 @@ characters.addEventListener('change', (event) => {
             console.error(`Error al cargar las imágenes: ${error}`);
         });
     };
-});
-
-// Abrir enlaces en los navegadores por defecto.
-const links = document.querySelectorAll('.custom-link');
-links.forEach(link => {
-    link.addEventListener('click', (event) => {
-        event.preventDefault();
-        const href = link.getAttribute('href');
-
-        shell.openExternal(href);
-    });
 });

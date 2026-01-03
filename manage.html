@@ -606,6 +606,7 @@
 			</div>
 		</div>
 	</div>
+	<script src="js/pageUtils.js"></script>
 	<script src="js/color-picker.js"></script>
 	<script src="js/dropdown.js"></script>
 	<script src="image-utils.js"></script>
@@ -614,7 +615,6 @@
 	<script src="animate-utils.js"></script>
 	<script src="js/renderer.js"></script>
 	<script src="js/fixToTop.js"></script>
-	<script src="js/pageUtils.js"></script>
 	<script>
 		window.addEventListener('beforeunload', (e) => {
 			console.log(e)
@@ -622,7 +622,11 @@
 			if (document.querySelector("#save-btn").disabled)
 				return
 
-			let dialogResult = ipcRenderer.sendSync("dialog", { message: "This character hasn't been saved yet, do you want to continue?", type: "warning", buttons: ["Yes", "No"] })
+			let dialogResult = ipcRenderer.sendSync("dialog", { message: "This character hasn't been saved yet, do you want to continue?", type: "warning", buttons: ["Yes", "No"] }).then((result) => {
+				console.log(result)
+			}).catch((err) => {
+				alert(err)
+			});
 			// console.log(e.returnValue)
 			if (dialogResult != 0)
 				e.returnValue = ""

@@ -18,8 +18,11 @@
 a {
     color: #9c9c9c;
     text-decoration: none;
-    outline: none;
     transition: color .25s ease-in-out;
+}
+
+a:focus:not(:focus-visible) {
+  outline: none;
 }
 
 a:hover {
@@ -68,7 +71,7 @@ h6 {
     font-size: 1rem;
 }
 
-input {
+input:focus:not(:focus-visible) {
     outline: none;
 }
 
@@ -851,10 +854,9 @@ svg:not(:root).svg-inline--fa {
     cursor: pointer;
     -webkit-user-select: none;
     -moz-user-select: none;
-    -ms-user-select: none;
+    -ms-user-select: none; 
     user-select: none;
     appearance: none;
-    outline: 0;
     border-bottom-left-radius: 0 !important;
     border-top-left-radius: 0 !important;
     transition: color .15s ease-in-out, background-color .15s ease-in-out, border-color .15s ease-in-out, box-shadow .15s ease-in-out, -webkit-box-shadow .15s ease-in-out;
