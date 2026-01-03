@@ -1,4 +1,3 @@
-const { app, ipcRenderer, shell } = require('electron');
 const path = require('path');
 
 ipcRenderer.on('window-size', (event, size) => {
@@ -94,9 +93,9 @@ imageUtils.loadImages(sprites).then((imgs) => {
         let currentBackground = await ipcRenderer.invoke('get-background');
         document.querySelector('.character-preview-box').style.backgroundColor = currentBackground;
     }
-    
+
     getBackground();
-    
+
     characterPreview.setUsername('^0Select a Character');
     characterPreview.setFontImage(imgs.main);
     characterPreview.setTinyImage(imgs.tiny);
@@ -202,8 +201,8 @@ function updateOptionCharacters() {
     const windows = ipcRenderer.sendSync('get-window-id');
     if (windows.length === (document.querySelector('#characters').length - 1)) { return; }
     characters.innerHTML = '<option value="-1" disabled selected>Select a Character</option>';
-    
-    windows.forEach(id => {    
+
+    windows.forEach(id => {
         var option = document.createElement('option');
         option.value = id;
         option.text = ipcRenderer.sendSync('get-character-state', id).characterName + `#${generateNumber(id)}`;
@@ -229,9 +228,6 @@ document.querySelector('#duplicate-btn').addEventListener('click', (event) => {
 
 document.querySelector('#save-btn').addEventListener('click', (event) => {
     event.target.disabled = true;
-    setTimeout(() => {
-        event.target.disabled = false;
-    }, 1500);
     let id = characters.value;
 
     if (id != -1) {
@@ -249,6 +245,7 @@ document.querySelector('#save-btn').addEventListener('click', (event) => {
 });
 
 document.querySelector('#accessory').addEventListener('change', (event) => {
+    document.querySelector("#save-btn").disabled = false;
     characterPreview.setAccessory(document.querySelector('#accessory').value, [document.querySelector('.tertiary-color-value').value, document.querySelector('.quaternary-color-value').value]);
 });
 
@@ -277,7 +274,7 @@ const releaseWakeLock = async () => {
     }
 };
 
-document.querySelector('#toggle-animation').onclick = function() {
+document.querySelector('#toggle-animation').onclick = function () {
     switch (paused) {
         case true:
             characterPreview.onInit();
@@ -315,7 +312,6 @@ characters.addEventListener('change', (event) => {
     if (document.getElementsByClassName('character-tab-none').length > 0) {
         document.querySelector('.character-tab').classList.remove('character-tab-none');
         document.querySelector("#duplicate-btn").disabled = false;
-        document.querySelector("#save-btn").disabled = false;
     }
 
     // Update Settings
@@ -330,13 +326,13 @@ characters.addEventListener('change', (event) => {
     document.querySelector('.tertiary-color-value').value = ipcRenderer.sendSync('get-character-state', id).tertiary;
     document.querySelector('.quaternary-color-value').value = ipcRenderer.sendSync('get-character-state', id).quaternary;
     document.querySelector('#accessory').value = ipcRenderer.sendSync('get-character-state', id).accessory;
-
+    
     if (characterPreview != null) {
         characterPreview.scale = characterPreview.clamp(Number(ipcRenderer.sendSync('get-scale')), 1, 6);
         let characterStates = ipcRenderer.sendSync('get-character-state', id);
         characterPreview.setUsername('^0' + characterStates.characterName + `#${generateNumber(id)}`);
         characterPreview.setRole('^1<MEMBER>');
-        const imgPath = path.join(__dirname, '..', 'character');
+        const imgPath = path.join(__dirname, 'character');
         let sprites = {
             character: (characterStates.custom ? imgPath + '\\' + characterStates.sprite : 'img/character/' + characterStates.sprite),
             eyes: (characterStates.custom ? imgPath + '\\' + characterStates.blink : 'img/character/' + characterStates.blink),
@@ -392,8 +388,8 @@ characters.addEventListener('change', (event) => {
             characterPreview.createAnimation('dangle-l', 4, 0, true, [[0, 1], [1, 1], [2, 1], [1, 1]]);
             characterPreview.createAnimation('dangle-r', 4, 1, true, [[3, 1], [4, 1], [5, 1], [4, 1]]);
             // drag animations have to use the opposite direction for the blink to work correctly
-            characterPreview.createAnimation('drag-l', 4, 1, false, [[9, 1], [9, 1], [9, 1], [9, 1], [9, 1], [9, 1], [9, 1], [9, 1]]);
-            characterPreview.createAnimation('drag-r', 4, 0, false, [[7, 1], [7, 1], [7, 1], [7, 1], [7, 1], [7, 1], [7, 1], [7, 1]]);
+            characterPreview.createAnimation('drag-l', 4, 1, true, [[8, 1], [9, 1], [9, 1], [9, 1], [9, 1], [9, 1], [9, 1], [9, 1]]);
+            characterPreview.createAnimation('drag-r', 4, 0, true, [[6, 1], [7, 1], [7, 1], [7, 1], [7, 1], [7, 1], [7, 1], [7, 1]]);
             characterPreview.createAnimation('sit-l', 4, 0, true, [[8, 0], [8, 0], [8, 0]]);
             characterPreview.createAnimation('sit-r', 4, 1, true, [[9, 0], [9, 0], [9, 0]]);
             characterPreview.createAnimation('init-fall-l', 6, 0, true, [[0, 2], [1, 2], [2, 2]]);
@@ -416,15 +412,4 @@ characters.addEventListener('change', (event) => {
             console.error(`Error al cargar las imágenes: ${error}`);
         });
     };
-});
-
-// Abrir enlaces en los navegadores por defecto.
-const links = document.querySelectorAll('.custom-link');
-links.forEach(link => {
-    link.addEventListener('click', (event) => {
-        event.preventDefault();
-        const href = link.getAttribute('href');
-
-        shell.openExternal(href);
-    });
 });

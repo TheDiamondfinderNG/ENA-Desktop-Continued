@@ -1,6 +1,6 @@
 class AnimateUtils {
     constructor() {
-        this.version = '1.0.1';
+        this.version = '1.0.0';
         this.lastFps = performance.now();
         this.frames = 0;
         this.lastDraw = 0;
@@ -97,6 +97,7 @@ class AnimateUtils {
             vspd: options.vspd || 0,
             recolor: options.recolor || false,
             blink: options.blink || true,
+            eyesClosed: options.eyesClosed || false,
             accessory: options.accessory || 'none',
             c_primary: options.primary || '#2c5bf5',
             c_secondary: options.secondary || '#ffe308',
@@ -151,14 +152,12 @@ class AnimateUtils {
                     coord: data.accessory.map(([x, y, z], index) => [x + diffW + (w - 36) * (index % 10), y + diffH, z])
                 };
             }
-
+            this.setRecolor([
+                this.findCharacter(this.name).c_primary,
+                this.findCharacter(this.name).c_secondary
+            ]);
             if (this.findCharacter(this.name).accessory != 'none') {
                 this.setAccessory(this.findCharacter(this.name).accessory);
-            } else {
-                this.setRecolor([
-                    this.findCharacter(this.name).c_primary,
-                    this.findCharacter(this.name).c_secondary
-                ]);
             }
         }).catch(error => alert('An error occurred: ' + error));
     };
@@ -172,9 +171,8 @@ class AnimateUtils {
         });
     }
     setAccessory = function(name) {
-        if (name === 'none') {
-            this.setRecolor([this.findCharacter(this.name).c_primary, this.findCharacter(this.name).c_secondary]);
-        } else {
+        this.setRecolor([this.findCharacter(this.name).c_primary, this.findCharacter(this.name).c_secondary]);
+        if (name !== 'none') {
             let character = this.findCharacter(this.name);
             var c = document.createElement('canvas');
             var ctx = c.getContext("2d");
@@ -184,12 +182,14 @@ class AnimateUtils {
             c.height = h;
             let layer = this.store_accessories[name].image;
             let coord = this.store_coords.accessory.characters[character.name].coord;
+            // So it doesn't do the same exact thing 26 times :)
+            let recoloredAccessory = this.recolorImage(layer, [character.c_tertiary, character.c_quaternary])
             for (var i = 0; i < coord.length; i++) {
-                ctx.drawImage(this.recolorImage(layer, [character.c_tertiary, character.c_quaternary]), coord[i][2] * (layer.width / 2), (layer.height / 2), (layer.width / 2), (layer.height / 2), ((i % 10) * 36) + coord[i][0], coord[i][1] + (Math.floor(i / 10) * character.h), (layer.width / 2), (layer.height / 2));
+                ctx.drawImage(recoloredAccessory, coord[i][2] * (layer.width / 2), (layer.height / 2), (layer.width / 2), (layer.height / 2), ((i % 10) * 36) + coord[i][0], coord[i][1] + (Math.floor(i / 10) * character.h), (layer.width / 2), (layer.height / 2));
             }
             ctx.drawImage(this.recolorImage(this.store_characters[character.name].image, [character.c_primary, character.c_secondary]), 0, 0, w, h, 0, 0, w, h);
             for (var i = 0; i < coord.length; i++) {
-                ctx.drawImage(this.recolorImage(layer, [character.c_tertiary, character.c_quaternary]), coord[i][2] * (layer.width / 2), (layer.height * 0), (layer.width / 2), (layer.height / 2), ((i % 10) * 36) + coord[i][0], coord[i][1] + (Math.floor(i / 10) * character.h), (layer.width / 2), (layer.height / 2));
+                ctx.drawImage(recoloredAccessory, coord[i][2] * (layer.width / 2), 0, (layer.width / 2), (layer.height / 2), ((i % 10) * 36) + coord[i][0], coord[i][1] + (Math.floor(i / 10) * character.h), (layer.width / 2), (layer.height / 2));
             }
             character.accessory = name;
             character.canvas = c;
@@ -231,6 +231,11 @@ class AnimateUtils {
             character.animationTime = 0;
             character.state.animationFrame = 0;
         }
+    };
+    closeEyes = function(name, closed) {
+        var character = this.characters.find(k => k.name === name);
+        
+        character.eyesClosed = closed
     };
     // hslToRgb = function(h, s, l) {
     //     let a = s * Math.min(l, 1 - l);
@@ -322,7 +327,7 @@ class AnimateUtils {
                 document.querySelector('#current-frame').value = character.state.animationFrame;
             }
             // Draw blink in character
-            if (character.canvas2 != null && character.blink && !character.activeAnimation.includes("init-fall-") && this.findAnimation('blinking').frames[character.state.blinkFrame].offsetX === 1) {
+            if (character.canvas2 != null && character.blink && !character.activeAnimation.includes("init-fall-") && this.findAnimation(character.eyesClosed ? 'closed-eyes' : 'blinking').frames[character.state.blinkFrame].offsetX === 1) {
                 if (this.username != null) {
                     // manage.html
                     this.context.drawImage(character.canvas2, this.store_coords.eye.characters[character.name].index * this.store_coords.eye.w, this.findAnimation(character.activeAnimation).direction ? this.store_coords.eye.h : 0, this.store_coords.eye.w, this.store_coords.eye.h, (400 / 2) - ((character.w / 2) * this.scale) + (this.store_coords.eye.characters[character.name].coord[this.findAnimation(character.activeAnimation).frames[character.state.animationFrame].offsetX + (this.findAnimation(character.activeAnimation).frames[character.state.animationFrame].offsetY * 10)][0] * this.scale), (400 / 2) - ((character.h / 2) * this.scale) + (this.store_coords.eye.characters[character.name].coord[this.findAnimation(character.activeAnimation).frames[character.state.animationFrame].offsetX + (this.findAnimation(character.activeAnimation).frames[character.state.animationFrame].offsetY * 10)][1] * this.scale), this.store_coords.eye.w * this.scale, this.store_coords.eye.h * this.scale);
@@ -334,7 +339,9 @@ class AnimateUtils {
             // This will animate the character
             character.animationTime += delta;
             if (character.blink) {
-                character.state.blinkFrame = Math.floor((character.animationTime + character.state.randomBlink) * this.findAnimation('blinking').fps) % this.findAnimation('blinking').frames.length;
+
+                character.state.blinkFrame = Math.floor((character.animationTime + character.state.randomBlink) * this.findAnimation(character.eyesClosed ? 'closed-eyes' : 'blinking').fps) % this.findAnimation(character.eyesClosed ? 'closed-eyes' : 'blinking').frames.length;
+            
             }
 
             if (!(!this.findAnimation(character.activeAnimation).loop && character.state.animationFrame >= (this.findAnimation(character.activeAnimation).frames.length - 1))) {
@@ -430,7 +437,6 @@ class AnimateUtils {
             var imageData = ctx.getImageData(0, 0, w, h);
             
             var character = this.findCharacter(this.name);
-            console.log(character.darknessOffset[0]);
             let newColors1 = this.adjustColors(colors, this.darkness * character.darknessOffset[0], 0.30, 0.45, character.hueShift[0]);
             let newColors2 = this.adjustColors(colors, this.darkness * character.darknessOffset[1], 0.35, 0.60, character.hueShift[1]);
             let newColors3 = this.adjustColors(colors, this.darkness * character.darknessOffset[2], 0.40, 0.75, character.hueShift[2]);

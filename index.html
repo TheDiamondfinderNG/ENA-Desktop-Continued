@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -39,7 +40,12 @@
         let imgPath = null;
         let isCustom = false;
         let wasDragging = false;
+        let wasPetting = false;
         let currentDrag = false;
+        let petAmount = 0;
+        let deltaStart = performance.now();
+        let deltaEnd = performance.now();
+        let delta = deltaEnd - deltaStart
         let dragOffset = { x: 0, y: 0 };
 
         function getRandomNumber() {
@@ -57,19 +63,45 @@
             wasDragging = false
         }
 
-        // Check every frame for dragging
-        function dragCheck() {
-            if (currentDrag) drag();
-            // Check to make sure this function doesn't run when it doesn't need to
-            else if (wasDragging) stopDrag();
-
-            requestAnimationFrame(dragCheck);
+        // Pet functions
+        function pet() {
+            console.log(delta/20, petAmount)
+            petAmount += delta/20
+            window.api.send('pet', petAmount/2);
+            wasPetting = true
         }
-        requestAnimationFrame(dragCheck);
-        
+        function stopPet() {
+            window.api.send('stop-pet');
+            wasPetting = false
+        }
+        // Check every frame for dragging
+        function frameCheck() {
+            deltaStart = deltaEnd
+            deltaEnd = performance.now();
+            delta = deltaEnd - deltaStart
+            // Pet decay
+            petAmount -= delta/20*5
+
+            if (currentDrag) {
+                drag();
+
+                // Prevent odd pet behavior
+                petAmount = 0
+            }
+            // Check to make sure this function doesn't run when it doesn't need to
+            else if (wasDragging) { stopDrag(); }
+
+            if (petAmount > 80) pet();
+            else if (wasPetting) stopPet();
+
+            petAmount = Math.max(0, Math.min(850, petAmount))
+            requestAnimationFrame(frameCheck);
+        }
+        requestAnimationFrame(frameCheck);
+
         // When clicked at all
         document.addEventListener("mousedown", (e) => {
-            if(e.button == 0){ // Left click
+            if (e.button == 0) { // Left click
                 // Start dragging
                 currentDrag = true
                 // Set the offset (the point where the ENA was clicked)
@@ -86,6 +118,11 @@
             currentDrag = false
         });
 
+        // When clicked at all
+        document.addEventListener("mousemove", (e) => {
+            petAmount += 6
+        });
+
         window.api.send('channel1', '');
 
         window.api.receive('channel1', (data) => {
@@ -98,6 +135,9 @@
             options = JSON.parse(states);
         });
 
+        window.api.receive('setClosedEyes', (bool) => {
+            animateUtils.closeEyes(characterName, bool)
+        })
         window.api.receive('setImagePath', (path) => {
             imgPath = path;
         });
@@ -191,11 +231,11 @@
                     [6, 1], [6, 1],
                 ]);
                 // drag animations have to use the opposite direction for the blink to work correctly
-                animateUtils.createAnimation('drag-l', 4, 1, false, [
-                    [9, 1], [9, 1],
+                animateUtils.createAnimation('drag-l', 8, 1, false, [
+                    [8, 1], [9, 1],
                 ]);
-                animateUtils.createAnimation('drag-r', 4, 0, false, [
-                    [7, 1], [7, 1],
+                animateUtils.createAnimation('drag-r', 8, 0, false, [
+                    [6, 1], [7, 1],
                 ]);
                 animateUtils.createAnimation('sit-l', 4, 0, true, [
                     [8, 0]
@@ -212,6 +252,7 @@
                 animateUtils.createAnimation('blinking', 10, 0, true, [
                     [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [1, 0], [1, 0]
                 ]);
+                animateUtils.createAnimation('closed-eyes', 1, 0, true, Array(42).fill([1, 0]));
                 const direction = getRandomNumber() < 0 ? 'l' : 'r';
                 const frameWidth = imgs.character.width / 10;
                 const frameHeight = imgs.character.height / 4;
@@ -249,4 +290,5 @@
         });
     </script>
 </body>
+
 </html>

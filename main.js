@@ -1,4 +1,4 @@
-const { app, screen, ipcMain, Menu, Tray, nativeImage, BrowserWindow } = require('electron');
+const { app, screen, ipcMain, dialog, shell, Menu, Tray, nativeImage, BrowserWindow } = require('electron');
 const { setActions } = require('./actions');
 const { setPhysics } = require('./physics');
 const { getRandomNumber } = require('./utils');
@@ -12,11 +12,14 @@ if (!isSecondInstance) { // Close the new instance if one is already running
     app.quit();
 }
 
+let debugMode = process.argv.includes("--debug") || process.argv.includes("-d")
+
 // We enable the following commands to fix the DPI (Scaled Screen)
 app.commandLine.appendSwitch('high-dpi-support', 'true');
 app.commandLine.appendSwitch('force-device-scale-factor', '1');
 
 const configPath = path.join(__dirname, 'preferences.json');
+const savePath = path.join(__dirname, 'saves.json');
 let tray = null;
 let currentBackground = '#90ee90' // manage.html Character Background
 let currentLanguage = 'en';
@@ -39,6 +42,7 @@ ipcMain.setMaxListeners(10);
 
 // Watermark
 console.log('\x1b[36m%s\x1b[0m', 'Desktop ENA developed by TanyaHastur, all rights reserved.');
+if(debugMode) console.log('\x1b[36m%s\x1b[0m')
 
 // Save preferences to the preferences.json file
 async function savePreferences() {
@@ -77,10 +81,84 @@ async function loadPreferences() {
     }
 }
 
+// Save saves to the saves.json file
+async function updateSaves(data) {
+    try {
+        await fs.promises.writeFile(savePath, JSON.stringify(data, null, 4), "utf-8");
+    } catch (err) {
+        console.error("Error saving saves: ", err);
+    }
+}
+
+// Load saves from the saves.json file
+async function getSaves() {
+    if (fs.existsSync(savePath)) {
+        let backupPath = path.join(__dirname, 'saves_bak.json')
+        try {
+            const rawdata = await fs.promises.readFile(savePath, "utf-8");
+            let returnData = JSON.parse(rawdata);
+            await fs.promises.writeFile(backupPath, rawdata);
+            return returnData
+        } catch (err) {
+            await fs.promises.readFile(backupPath, "utf-8")
+                .then(
+                    data => {
+                        dialog.showMessageBox(
+                            null,
+                            {
+                                message: "The save files are corrupted. Would you like to attempt to load a backup?",
+                                type: "error",
+                                buttons: ["Yes", "No"]
+                            })
+                            .then(dialogResponse => {
+                                if (!dialogResponse.response)
+                                    fs.promises.writeFile(savePath, data)
+                                if (settings)
+                                    settings.reload()
+                            })
+                    }
+                )
+                .catch(
+                    () => {
+                        dialog.showMessageBox(
+                            null,
+                            {
+                                message: "The save files are corrupted and there is no backup available.\n\nWould you like to remake the save from scratch? This is irreversible\nYou may also open the saves.json file to manually troubleshoot",
+                                type: "error",
+                                noLink: true,
+                                buttons: ["Yes", "No", "Open saves.json"]
+                            })
+                            .then(dialogResponse => {
+                                ([
+                                    () => {
+                                        updateSaves({})
+                                        if (settings)
+                                            settings.reload()
+                                    },
+                                    () => { },
+                                    () => {
+                                        shell.showItemInFolder(savePath)
+                                    }
+                                ])[dialogResponse.response]()
+                            })
+
+                    });
+            console.error("Error loading saves: ", err);
+        }
+    } else {
+        updateSaves({})
+        return {}
+    }
+}
+
 loadPreferences().then(() => {
     // We will use this to prevent the scale from using the default scale and not the one we have configured.
     changeScale(currentScale);
 });
+
+app.on('before-quit', () => {
+    settings.destroy()
+})
 
 ipcMain.handle('get-background', async (event) => {
     try {
@@ -118,6 +196,11 @@ ipcMain.on('channel1', (event, arg) => {
         }
     }
 });
+
+// Allow dialog box from settings page
+ipcMain.on('dialog', (event, arg) => {
+    event.returnValue = dialog.showMessageBoxSync(settings, arg)
+})
 
 ipcMain.on('right-click', (event, arg) => {
     const win = BrowserWindow.fromWebContents(event.sender);
@@ -167,7 +250,7 @@ ipcMain.on('drag-me', (event, offset) => {
 });
 
 // Prevent being pinned to the wall
-ipcMain.on('stop-drag', (event, arg) => {
+ipcMain.on('stop-drag', (event) => {
 
     const win = BrowserWindow.fromWebContents(event.sender);
 
@@ -181,6 +264,26 @@ ipcMain.on('stop-drag', (event, arg) => {
     shimejiStates.isDragging = false;
     shimejiStates.isReleased = true;
 })
+
+// Custom drag function, a work-around for aero shake
+ipcMain.on('pet', (event, petAmount) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    const shimejiStates = characterStates[win.id];
+    shimejiStates.dx = 0
+    shimejiStates.lastEvent.sender.send('setClosedEyes', petAmount > 200);
+    if (petAmount > 400) {
+        shimejiStates.isPetting = true
+        shimejiStates.lastEvent.sender.send('channel1', 'sit-' + (shimejiStates.direction === 'right' ? 'r' : 'l'));
+    }
+});
+
+// Prevent being pinned to the wall
+ipcMain.on('stop-pet', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    characterStates[win.id].isPetting = false
+    characterStates[win.id].lastEvent.sender.send('setClosedEyes', false);
+})
+
 
 ipcMain.on('duplicate-character', (event, id) => {
     createShimejiWindow({
@@ -229,6 +332,45 @@ ipcMain.on('update-allow-customs', (event, bool) => {
 
 ipcMain.on('get-allow-customs', (event) => {
     event.returnValue = allowCustoms;
+});
+
+ipcMain.on('update-saves', (event, data) => {
+    updateSaves(data);
+});
+
+ipcMain.on('fetch-saves', (event) => {
+    getSaves().then((data) => {
+        event.returnValue = data;
+    })
+});
+
+ipcMain.on('save-current-characters', (event, save) => {
+    getSaves().then(saves => {
+        const saveData = saves[save]
+        saveData.characters = []
+        for (let id in characterStates) {
+            saveData.characters.push({
+                characterName: characterStates[id].characterName,
+                spriteImage: characterStates[id].sprite,
+                blinkImage: characterStates[id].blink,
+                isCustomCharacter: characterStates[id].custom,
+                accessory: characterStates[id].accessory,
+                primaryColor: characterStates[id].primary,
+                secondaryColor: characterStates[id].secondary,
+                tertiaryColor: characterStates[id].tertiary,
+                quaternaryColor: characterStates[id].quaternary,
+                frameWidth: characterStates[id].width,
+                frameHeight: characterStates[id].height
+            })
+        }
+        updateSaves(structuredClone(saves)).then(() =>
+            event.returnValue = ""
+        );
+
+    })
+});
+ipcMain.on('load-save', (event, save, append = false) => {
+    loadSave(save, append)
 });
 
 ipcMain.on('requestChangeColor', (event, id) => {
@@ -317,16 +459,7 @@ function createBrowserWindow(options) {
 }
 
 app.on('ready', () => {
-    createShimejiWindow({
-        characterName: 'Ena',
-        spriteImage: 'ena_default.png',
-        blinkImage: 'ena_blink.png',
-        isCustomCharacter: false,
-        primaryColor: '#2c5bf5',
-        secondaryColor: '#ffe308',
-        frameWidth: 36,
-        frameHeight: 52
-    });
+    loadSave()
     onInit();
 });
 
@@ -347,7 +480,7 @@ function createTray() {
 
         settings.setFullScreenable(false); // Disable Fullscreen
         settings.webContents.on('before-input-event', (e, input) => {
-            if ((input.control && input.shift && input.key === 'I')) {
+            if ((input.control && input.shift && input.key === 'I') && debugMode) {
                 e.preventDefault(); // Disabled DevTool
             }
         });
@@ -548,7 +681,7 @@ function updateTray() {
 
                 settings.setFullScreenable(false);
                 settings.webContents.on('before-input-event', (e, input) => {
-                    if ((input.control && input.shift && input.key === 'I')) {
+                    if ((input.control && input.shift && input.key === 'I') && debugMode) {
                         e.preventDefault(); // Disabled DevTools
                     }
                 });
@@ -652,10 +785,10 @@ function onDestroy(win) {
     clearInterval(intervals[win.id]);
     delete characterStates[win.id];
     delete intervals[win.id];
-    if(Object.keys(characterStates).length == 0){
+    if (Object.keys(characterStates).length == 0) {
         console.log('\x1b[31m%s\x1b[0m', 'There are no characters, leaving Desktop ENA...');
-        app.quit(); 
-    } 
+        app.quit();
+    }
 }
 
 async function update(delta, win) {
@@ -677,9 +810,9 @@ async function update(delta, win) {
     let display = screen.getPrimaryDisplay();
     let { width, height } = display.size;
     if (window != undefined) {
-        if (!characterStates[win.id].isSitting) {
+        if (!characterStates[win.id].isSitting && !characterStates[win.id].isPetting) {
             characterStates[win.id].state = characterStates[win.id].dx == 0 ? 'idle' : 'walk';
-        } else if (characterStates[win.id].isSitting) {
+        } else {
             characterStates[win.id].state = 'sit';
         }
         if (window.title === 'Desktop ENA' || window.title === 'ENA' || window.title === '' || window.title === 'Program Manager') { return false; }
@@ -729,19 +862,18 @@ function setCollision(win) {
     const bounds = getDisplayForPosition(x, y)
     let { width, height } = (bounds ?? displays[0]).workAreaSize;
 
-    
+
     // Update bounds, important for out of bounds scenarios
     if (bounds) {
         // Not in the void, reset timer
         characterStates[win.id].voidTimer = -1
-        
-        // 
+
         characterStates[win.id].lastRoofY = bounds.bounds.y
         characterStates[win.id].lastFloorY = bounds.bounds.y + (!winIsFullscreen ? bounds.workAreaSize.height : bounds.size.height)
         characterStates[win.id].lastLeftWall = bounds.bounds.x
         characterStates[win.id].lastRightWall = bounds.bounds.x + bounds.bounds.width
     }
-    
+
     // If window is removed or being dragged, disable collision and unnecessary void detection
     if (win == undefined || (characterStates[win.id] && characterStates[win.id].isDragging)) { return; }
 
@@ -862,7 +994,7 @@ function startGravity(win) {
                 win.setPosition(x + shimejiStates.dx, (characterStates[win.id].lastFloorY - winHeight));
                 shimejiStates.isFalling = false;
                 // Actualizamos la animación de dangling o falling a idle o walk
-                if (!shimejiStates.isSitting) {
+                if (!shimejiStates.isSitting && !shimejiStates.isPetting) {
                     if (shimejiStates.lastEvent && shimejiStates.state != 'view') {
                         shimejiStates.lastEvent.sender.send('channel1', (shimejiStates.state === 'idle' ? 'idle-' : 'walk-') + (shimejiStates.direction === 'right' ? 'r' : 'l'));
                     }
@@ -877,7 +1009,7 @@ function startGravity(win) {
     // Physics
     setPhysics(win);
     // Sitting Gravity
-    if (shimejiStates.lastEvent && !shimejiStates.isFalling && shimejiStates.isSitting && !shimejiStates.isDragging) {
+    if (shimejiStates.lastEvent && !shimejiStates.isFalling && (shimejiStates.isSitting || shimejiStates.isSitting) && !shimejiStates.isDragging) {
         shimejiStates.lastEvent.sender.send('channel1', 'sit-' + (shimejiStates.direction === 'right' ? 'r' : 'l'));
         shimejiStates.dx = 0;
     }
@@ -1164,7 +1296,7 @@ function buildMenu(win) {
 
                 settings.setFullScreenable(false);
                 settings.webContents.on('before-input-event', (e, input) => {
-                    if ((input.control && input.shift && input.key === 'I')) {
+                    if ((input.control && input.shift && input.key === 'I') && debugMode) {
                         e.preventDefault(); // Disabled DevTools
                     }
                 });
@@ -1200,7 +1332,7 @@ function createCharacterState(options) {
     return {
         chaseCursor: false,
         scale: currentScale,
-        accessory: options.characterId ? characterStates[options.characterId].accessory : 'none',
+        accessory: options.characterId ? characterStates[options.characterId].accessory : (options.accessory ?? 'none'),
         dx: (getRandomNumber() === 1 ? (1 * currentScale) : (-1 * currentScale)),
         dy: 3 * currentScale,
         width: options.frameWidth ?? 36,
@@ -1222,10 +1354,11 @@ function createCharacterState(options) {
         isFalling: true,
         isBouncing: true,
         isSitting: false,
+        isPetting: false,
         primary: options.characterId ? characterStates[options.characterId].primary : (options.primaryColor ?? '#2c5bf5'),
         secondary: options.characterId ? characterStates[options.characterId].secondary : (options.secondaryColor ?? '#ffe308'),
-        tertiary: options.characterId ? characterStates[options.characterId].tertiary : '#2c5bf5',
-        quaternary: options.characterId ? characterStates[options.characterId].quaternary : '#ffe308',
+        tertiary: options.characterId ? characterStates[options.characterId].tertiary : (options.tertiaryColor ?? '#2c5bf5'),
+        quaternary: options.characterId ? characterStates[options.characterId].quaternary : (options.quaternaryColor ?? '#ffe308'),
         hueShift: options.hueShift ?? [0, 0, 0],
         darknessOffset: options.darknessOffset ?? [0.85, 1.45, 1.60],
         v_speed_x: 0,
@@ -1239,6 +1372,42 @@ function createCharacterState(options) {
         lastEvent: null,
         menu: null
     };
+}
+
+async function loadSave(saveLabel = null, append = false) {
+    let saves = await getSaves()
+    
+    favoriteCheck:
+    if (saveLabel === null) {
+        for (let save in saves) {
+            if (saves[save].favorite) {
+                console.log(`Save "${save}" loaded`)
+                saveLabel = save
+                break favoriteCheck;
+            }
+        };
+        // Only runs when there's no favorite
+        console.log(`No favorite, loaded default`)
+        createShimejiWindow({
+            characterName: 'Ena',
+            spriteImage: 'ena_default.png',
+            blinkImage: 'ena_blink.png',
+            isCustomCharacter: false,
+            primaryColor: '#2c5bf5',
+            secondaryColor: '#ffe308',
+            frameWidth: 36,
+            frameHeight: 52
+        });
+        return
+    }
+    if (!append) {
+        for (let id in characterStates) {
+            BrowserWindow.fromId(Number(id)).close()
+        }
+    }
+    for (let i in saves[saveLabel].characters) {
+        createShimejiWindow({ ...saves[saveLabel].characters[i] });
+    }
 }
 
 function createShimejiWindow(options) {
@@ -1281,7 +1450,7 @@ function createShimejiWindow(options) {
     });
 
     win.webContents.on('before-input-event', (e, input) => {
-        if ((input.control && input.shift && input.key === 'I')) {
+        if ((input.control && input.shift && input.key === 'I') && debugMode) {
             e.preventDefault(); // Disabled DevTools
         }
     });
