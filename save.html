@@ -491,7 +491,7 @@
 				let saveDataOld = { ...saveData }
 				saveData = {}
 
-				for (const save in saveDataOld) {
+				for (let save in saveDataOld) {
 					saveData[save == dataLabel ? labelText : save] = structuredClone(saveDataOld[save])
 				}
 				ipcRenderer.send("update-saves", saveData)
@@ -597,12 +597,12 @@
 		let saveData = ipcRenderer.sendSync("fetch-saves")
 		reverseSaves = Object.keys(saveData).reverse()
 
-		for (i in reverseSaves) {
+		for (let save of reverseSaves) {
 			try {
-				createSave(null, { "label": reverseSaves[i], ...saveData[reverseSaves[i]] })
+				createSave(null, { "label": save, ...saveData[save] })
 			} catch (err) {
 				console.error(err)
-				console.error("Save '" + reverseSaves[i] + "' corrupted")
+				console.error("Save '" + save + "' corrupted")
 			}
 		}
 

@@ -118,9 +118,9 @@
             currentDrag = false
         });
 
-        // When clicked at all
+        // When mouse is moved
         document.addEventListener("mousemove", (e) => {
-            petAmount += 6
+            petAmount += 6 * delta/20
         });
 
         window.api.send('channel1', '');

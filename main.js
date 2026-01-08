@@ -12,14 +12,19 @@ if (!isSecondInstance) { // Close the new instance if one is already running
     app.quit();
 }
 
-let debugMode = process.argv.includes("--debug") || process.argv.includes("-d")
+let devMode = process.argv.includes("--dev") || process.argv.includes("-d")
 
 // We enable the following commands to fix the DPI (Scaled Screen)
 app.commandLine.appendSwitch('high-dpi-support', 'true');
 app.commandLine.appendSwitch('force-device-scale-factor', '1');
 
-const configPath = path.join(__dirname, 'preferences.json');
-const savePath = path.join(__dirname, 'saves.json');
+// Is this running in an asar file?
+const isAsarFile = __dirname.endsWith(".asar")
+// Save data externally
+const dataPath = (isAsarFile ? path.normalize(__dirname + "\\..") : __dirname)
+
+const configPath = path.join(dataPath, 'preferences.json');
+const savePath = path.join(dataPath, 'saves.json');
 let tray = null;
 let currentBackground = '#90ee90' // manage.html Character Background
 let currentLanguage = 'en';
@@ -42,7 +47,11 @@ ipcMain.setMaxListeners(10);
 
 // Watermark
 console.log('\x1b[36m%s\x1b[0m', 'Desktop ENA developed by TanyaHastur, all rights reserved.');
-if(debugMode) console.log('\x1b[36m%s\x1b[0m')
+if (devMode) { 
+    console.log('\x1b[42m\x1b[30m\x1b[4m%s\x1b[0m', "     !!!DEVELOPER MODE ENABLED!!!     ") 
+}
+
+console.log(`Running in ${isAsarFile ? "asar file" : "directory"}, saves and preferences will be loaded and saved ${isAsarFile ? "ex" : "in"}ternally`)
 
 // Save preferences to the preferences.json file
 async function savePreferences() {
@@ -93,7 +102,7 @@ async function updateSaves(data) {
 // Load saves from the saves.json file
 async function getSaves() {
     if (fs.existsSync(savePath)) {
-        let backupPath = path.join(__dirname, 'saves_bak.json')
+        let backupPath = path.join(dataPath, 'saves_bak.json')
         try {
             const rawdata = await fs.promises.readFile(savePath, "utf-8");
             let returnData = JSON.parse(rawdata);
@@ -480,7 +489,7 @@ function createTray() {
 
         settings.setFullScreenable(false); // Disable Fullscreen
         settings.webContents.on('before-input-event', (e, input) => {
-            if ((input.control && input.shift && input.key === 'I') && debugMode) {
+            if ((input.control && input.shift && input.key === 'I') && !devMode) {
                 e.preventDefault(); // Disabled DevTool
             }
         });
@@ -681,7 +690,7 @@ function updateTray() {
 
                 settings.setFullScreenable(false);
                 settings.webContents.on('before-input-event', (e, input) => {
-                    if ((input.control && input.shift && input.key === 'I') && debugMode) {
+                    if ((input.control && input.shift && input.key === 'I') && !devMode) {
                         e.preventDefault(); // Disabled DevTools
                     }
                 });
@@ -859,7 +868,7 @@ function setCollision(win) {
     let [x, y] = win.getPosition();
     let [winWidth, winHeight] = win.getSize();
     // Current monitor position
-    const bounds = getDisplayForPosition(x, y)
+    const bounds = getDisplayForPosition(x + winWidth/2, y)
     let { width, height } = (bounds ?? displays[0]).workAreaSize;
 
 
@@ -1296,7 +1305,7 @@ function buildMenu(win) {
 
                 settings.setFullScreenable(false);
                 settings.webContents.on('before-input-event', (e, input) => {
-                    if ((input.control && input.shift && input.key === 'I') && debugMode) {
+                    if ((input.control && input.shift && input.key === 'I') && !devMode) {
                         e.preventDefault(); // Disabled DevTools
                     }
                 });
@@ -1376,17 +1385,18 @@ function createCharacterState(options) {
 
 async function loadSave(saveLabel = null, append = false) {
     let saves = await getSaves()
-    
+
     favoriteCheck:
     if (saveLabel === null) {
         for (let save in saves) {
             if (saves[save].favorite) {
                 console.log(`Save "${save}" loaded`)
                 saveLabel = save
+                // Break the loop and skip the default load
                 break favoriteCheck;
             }
         };
-        // Only runs when there's no favorite
+        // Load a basic Ena when there's no favorite
         console.log(`No favorite, loaded default`)
         createShimejiWindow({
             characterName: 'Ena',
@@ -1400,14 +1410,19 @@ async function loadSave(saveLabel = null, append = false) {
         });
         return
     }
+
+    let oldIds = []
+
     if (!append) {
         for (let id in characterStates) {
-            BrowserWindow.fromId(Number(id)).close()
+            oldIds.push(Number(id))
         }
     }
-    for (let i in saves[saveLabel].characters) {
-        createShimejiWindow({ ...saves[saveLabel].characters[i] });
+    for (let character of saves[saveLabel].characters) {
+        createShimejiWindow({ ...character });
     }
+    for (let id of oldIds)
+        BrowserWindow.fromId(id).close()
 }
 
 function createShimejiWindow(options) {
@@ -1450,7 +1465,7 @@ function createShimejiWindow(options) {
     });
 
     win.webContents.on('before-input-event', (e, input) => {
-        if ((input.control && input.shift && input.key === 'I') && debugMode) {
+        if ((input.control && input.shift && input.key === 'I') && !devMode) {
             e.preventDefault(); // Disabled DevTools
         }
     });
