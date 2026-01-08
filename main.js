@@ -868,7 +868,7 @@ function setCollision(win) {
     let [x, y] = win.getPosition();
     let [winWidth, winHeight] = win.getSize();
     // Current monitor position
-    const bounds = getDisplayForPosition(x + winWidth/2, y)
+    const bounds = getDisplayForPosition(x, y)
     let { width, height } = (bounds ?? displays[0]).workAreaSize;
 
 
