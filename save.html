@@ -152,6 +152,7 @@
 	<script src="js/color-picker.js"></script>
 	<script src="js/dropdown.js"></script>
 	<script src="image-utils.js"></script>
+	<script src="animate-utils.js"></script>
 	<script src="js/fontUtils.js"></script>
 	<script src="js/ponyUtils.js"></script>
 	<script src="js/fixToTop.js"></script>
@@ -170,6 +171,83 @@
 
 		function updateSaveBounds() {
 			saveBounds = saveSlots.getBoundingClientRect();
+		}
+
+		let accessories = {
+			ena: 'img/accessory/Ena_accessory.png',
+			bbq_ena: 'img/accessory/BBQEna_accessory.png',
+			shepherd: 'img/accessory/Shepherd_accessory.png',
+			margo: 'img/accessory/Margo_accessory.png',
+			ula: 'img/accessory/Ula_accessory.png',
+			hg_dog: 'img/accessory/HourglassDog_accessory.png',
+			turron: 'img/accessory/Turron_accessory.png',
+			pumpkin: 'img/accessory/Pumpkin_accessory.png',
+			ena_bunny: 'img/accessory/EnaBunny_accessory.png',
+			clown_dog: 'img/accessory/ClownDog_accessory.png',
+			dog_grim: 'img/accessory/DogGrim_accessory.png',
+			margo_kitty: 'img/accessory/MargoKitty_accessory.png',
+			lollipop: 'img/accessory/Lollipop_accessory.png',
+			eve_hat: 'img/accessory/pt_eveHat_accessory.png',
+			bbq_bunny: 'img/accessory/EnaBunnyBBQ_accessory.png',
+			phone: 'img/accessory/phone_accessory.png',
+			leek: 'img/accessory/leek_accessory.png',
+			baguette: 'img/accessory/baguette_accessory.png',
+			pearto: 'img/accessory/pearto_accessory.png'
+		}
+
+		async function draw(save) {
+			clear()
+			for (charIndex in saveData[save].characters) {
+				console.log(charIndex)
+				let char = saveData[save].characters[charIndex]
+				let key = String(Math.random()*(10**17))
+				let offset = (saveData[save].characters.length - charIndex - 1) * 36
+				let c = document.createElement('canvas');
+				let fake_ctx = c.getContext("2d");
+				let paths = { }
+				paths["sprite"+key] = 'img/character/' + char.spriteImage 
+				if (char.accessory != 'none')
+				paths["accessory"+key] = accessories[char.accessory]
+
+				await imageUtils.loadImages(paths)
+				console.log(charIndex)
+				let ena = imageUtils.imgs["sprite"+key]
+				let acc = imageUtils.imgs["accessory"+key]
+				let ena2 = await animateUtils.recolorImage(ena, [char.primaryColor, char.secondaryColor], true)
+				let acc2 = await animateUtils.recolorImage(acc, [char.tertiaryColor, char.quaternaryColor], true)
+				console.log(charIndex)
+				console.log(acc2)
+
+				fake_ctx.imageSmoothingEnabled = false
+				if (char.accessory != 'none')
+				fake_ctx.drawImage(acc2, 20, 23, 20, 23, 16, -4, 40, 46)
+				fake_ctx.drawImage(ena2, 36, 0, 36, 72, 0, -8, 72, 144)
+				if (char.accessory != 'none')
+				fake_ctx.drawImage(acc2, 20, 0, 20, 23, 16, -4, 40, 46)
+				ctx.drawImage(c, offset, 0)
+				imageUtils.imgs = {}
+				imageUtils.loaded = 0
+			}
+		}
+
+		function setup() {
+			ctx.imageSmoothingEnabled = false
+			ctx.shadowOffsetX = -5
+			ctx.shadowOffsetY = 5
+			ctx.shadowColor = "rgba(0,0,0,0.3)"
+		}
+
+		async function shitassTestCode() {
+			canvas = document.querySelector("canvas")
+			ctx = canvas.getContext("2d")
+			char = saveData.testing.characters[0]
+
+
+			setup()
+		}
+
+		function clear() {
+			ctx.clearRect(0, 0, 1000, 1000)
 		}
 
 
@@ -258,7 +336,7 @@
 											</span>
 										</span>
 										<span class="save-bottom">
-											<canvas class="save-previews">
+											<canvas class="save-previews" height="72">
 											</canvas>
 											<span class="btn-group">
 												<button aria-label="Favorite"
@@ -533,7 +611,7 @@
 			}
 
 			save.querySelector('.add-button').onclick = (e) => {
-				
+
 				ipcRenderer.send("load-save", dataLabel, true)
 			}
 

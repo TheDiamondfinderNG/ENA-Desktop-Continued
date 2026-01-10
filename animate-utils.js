@@ -436,10 +436,11 @@ class AnimateUtils {
             ctx.drawImage(img, 0, 0, w, h);
             var imageData = ctx.getImageData(0, 0, w, h);
             
+            if (!imageOnly)
             var character = this.findCharacter(this.name);
-            let newColors1 = this.adjustColors(colors, this.darkness * character.darknessOffset[0], 0.30, 0.45, character.hueShift[0]);
-            let newColors2 = this.adjustColors(colors, this.darkness * character.darknessOffset[1], 0.35, 0.60, character.hueShift[1]);
-            let newColors3 = this.adjustColors(colors, this.darkness * character.darknessOffset[2], 0.40, 0.75, character.hueShift[2]);
+            let newColors1 = this.adjustColors(colors, this.darkness * (imageOnly ? 1 : character.darknessOffset[0]), 0.30, 0.45, imageOnly ? 0 : character.hueShift[0]);
+            let newColors2 = this.adjustColors(colors, this.darkness * (imageOnly ? 1.45 : character.darknessOffset[1]), 0.35, 0.60, imageOnly ? 0 : character.hueShift[1]);
+            let newColors3 = this.adjustColors(colors, this.darkness * (imageOnly ? 1.60 : character.darknessOffset[2]), 0.40, 0.75, imageOnly ? 0 : character.hueShift[2]);
 
             let finalColors = [
                 [255, 0, 255, this.hexToRgb(colors[0])[0], this.hexToRgb(colors[0])[1], this.hexToRgb(colors[0])[2]],

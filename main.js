@@ -357,19 +357,21 @@ ipcMain.on('save-current-characters', (event, save) => {
     getSaves().then(saves => {
         const saveData = saves[save]
         saveData.characters = []
-        for (let id in characterStates) {
+        for (let characterId in characterStates) {
+            let character = characterStates[characterId]
             saveData.characters.push({
-                characterName: characterStates[id].characterName,
-                spriteImage: characterStates[id].sprite,
-                blinkImage: characterStates[id].blink,
-                isCustomCharacter: characterStates[id].custom,
-                accessory: characterStates[id].accessory,
-                primaryColor: characterStates[id].primary,
-                secondaryColor: characterStates[id].secondary,
-                tertiaryColor: characterStates[id].tertiary,
-                quaternaryColor: characterStates[id].quaternary,
-                frameWidth: characterStates[id].width,
-                frameHeight: characterStates[id].height
+                characterName: character.characterName,
+                spriteImage: character.sprite,
+                blinkImage: character.blink,
+                isCustomCharacter: character.custom,
+                accessory: character.accessory,
+                primaryColor: character.primary,
+                secondaryColor: character.secondary,
+                tertiaryColor: character.tertiary,
+                quaternaryColor: character.quaternary,
+                darknessOffset: character.darknessOffset,
+                frameWidth: character.width,
+                frameHeight: character.height
             })
         }
         updateSaves(structuredClone(saves)).then(() =>
