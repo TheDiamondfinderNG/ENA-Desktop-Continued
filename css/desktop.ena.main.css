@@ -929,6 +929,11 @@ svg:not(:root).svg-inline--fa {
     display: flex;
 }
 
+.save-slot .preview-wrapper {
+    width: 100%;
+    overflow: hidden;
+}
+
 .save-slot .save-previews {
     display: inline-block;
 }

@@ -167,7 +167,15 @@
 			favorite: false,
 			characters: {}
 		}
+
+		let shiftHeld = false
+
 		windowContainer.addEventListener("scroll", () => { windowScroll = windowContainer.scrollTop })
+
+		// Checks for if shift is being held down
+		document.addEventListener('keydown', e => { if (e.key == "Shift") shiftHeld = true })
+		document.addEventListener('keyup', e => { if (e.key == "Shift") shiftHeld = false })
+
 
 		function updateSaveBounds() {
 			saveBounds = saveSlots.getBoundingClientRect();
@@ -194,62 +202,6 @@
 			baguette: 'img/accessory/baguette_accessory.png',
 			pearto: 'img/accessory/pearto_accessory.png'
 		}
-
-		async function draw(save) {
-			clear()
-			for (charIndex in saveData[save].characters) {
-				console.log(charIndex)
-				let char = saveData[save].characters[charIndex]
-				let key = String(Math.random()*(10**17))
-				let offset = (saveData[save].characters.length - charIndex - 1) * 36
-				let c = document.createElement('canvas');
-				let fake_ctx = c.getContext("2d");
-				let paths = { }
-				paths["sprite"+key] = 'img/character/' + char.spriteImage 
-				if (char.accessory != 'none')
-				paths["accessory"+key] = accessories[char.accessory]
-
-				await imageUtils.loadImages(paths)
-				console.log(charIndex)
-				let ena = imageUtils.imgs["sprite"+key]
-				let acc = imageUtils.imgs["accessory"+key]
-				let ena2 = await animateUtils.recolorImage(ena, [char.primaryColor, char.secondaryColor], true)
-				let acc2 = await animateUtils.recolorImage(acc, [char.tertiaryColor, char.quaternaryColor], true)
-				console.log(charIndex)
-				console.log(acc2)
-
-				fake_ctx.imageSmoothingEnabled = false
-				if (char.accessory != 'none')
-				fake_ctx.drawImage(acc2, 20, 23, 20, 23, 16, -4, 40, 46)
-				fake_ctx.drawImage(ena2, 36, 0, 36, 72, 0, -8, 72, 144)
-				if (char.accessory != 'none')
-				fake_ctx.drawImage(acc2, 20, 0, 20, 23, 16, -4, 40, 46)
-				ctx.drawImage(c, offset, 0)
-				imageUtils.imgs = {}
-				imageUtils.loaded = 0
-			}
-		}
-
-		function setup() {
-			ctx.imageSmoothingEnabled = false
-			ctx.shadowOffsetX = -5
-			ctx.shadowOffsetY = 5
-			ctx.shadowColor = "rgba(0,0,0,0.3)"
-		}
-
-		async function shitassTestCode() {
-			canvas = document.querySelector("canvas")
-			ctx = canvas.getContext("2d")
-			char = saveData.testing.characters[0]
-
-
-			setup()
-		}
-
-		function clear() {
-			ctx.clearRect(0, 0, 1000, 1000)
-		}
-
 
 		// Create a save slot and return its data
 		function createSave(e, data = emptySave) {
@@ -336,8 +288,10 @@
 											</span>
 										</span>
 										<span class="save-bottom">
-											<canvas class="save-previews" height="72">
-											</canvas>
+											<span class="preview-wrapper">
+												<canvas class="save-previews" height="72">
+												</canvas>
+											</span>
 											<span class="btn-group">
 												<button aria-label="Favorite"
 													class="btn favorite-button">
@@ -419,7 +373,6 @@
 				document.querySelectorAll(".save-slot .label").forEach((slotLabel) => {
 					let l = slotLabel.innerText
 					saveData[l] = structuredClone(saveDataOld[l])
-					console.log(slotLabel.parentElement.parentElement.matches(".favorite"))
 					if (slotLabel.parentElement.parentElement.matches(".favorite")) {
 						saveData[labelText] = { ...slotData }
 					}
@@ -447,6 +400,11 @@
 				releaseSave()
 				if (!(e.target.matches(".save-slot") || e.target.matches(".save-top"))) return
 				let open = document.querySelector(".open")
+
+				if (!savesDrawn) {
+					draw(dataLabel).then(x => { savesDrawn = x })
+				}
+
 				if (open && open != save)
 					document.querySelector(".open").classList.remove('open')
 				if (!e.target.matches(".save-slot .btn")) save.classList.toggle('open')
@@ -578,8 +536,10 @@
 			})
 
 			save.querySelector('.remove-button').addEventListener('click', () => {
-				if (!confirm("Are you sure you want to delete this save? This cannot be undone"))
-					return
+				if (!shiftHeld)
+					if (!confirm("Are you sure you want to delete this save? This cannot be undone"))
+						return
+				shiftHeld = false
 				save.remove()
 				updateSaveBounds()
 				delete saveData[dataLabel]
@@ -598,10 +558,12 @@
 			}
 
 			save.querySelector('.save-button').onclick = (e) => {
-				if (!confirm("Are you sure you want to override this save? This cannot be undone"))
-					return
+				if (!shiftHeld)
+					if (!confirm("Are you sure you want to override this save? This cannot be undone"))
+						return
 				ipcRenderer.send("save-current-characters", dataLabel)
 				saveData = ipcRenderer.sendSync("fetch-saves")
+				savesDrawn = false
 			}
 
 			save.querySelector('.load-button').onclick = (e) => {
@@ -667,6 +629,63 @@
 					ipcRenderer.send("update-saves", saveData)
 				})
 			})
+
+			let savesDrawn = false
+
+			async function draw(saveLabel) {
+				clear()
+				let offsetX = 0
+				for (let char in saveData[saveLabel].characters)
+					offsetX += 34
+				savePreview.width = offsetX + 100
+				let characterCanvas = document.createElement('canvas');
+				let characterCtx = characterCanvas.getContext("2d");
+				setup()
+				for (const characterData of saveData[saveLabel].characters) {
+					if(Object.keys(imageUtils.imgs).length) return false
+					let charWidth = characterData.frameWidth
+					let charHeight = characterData.frameHeight
+					offsetX -= 34
+					let offsetY = -(charHeight - 52) * 2
+					let paths = {}
+					paths["sprite"] = 'img/character/' + (characterData.isCustomCharacter ? "../../character/" : "") + characterData.spriteImage
+					if (characterData.accessory != 'none')
+						paths["accessory"] = accessories[characterData.accessory]
+
+					await imageUtils.loadImages(paths)
+					let ena = imageUtils.imgs["sprite"]
+					let acc = imageUtils.imgs["accessory"]
+					let ena2 = await animateUtils.recolorImage(ena, [characterData.primaryColor, characterData.secondaryColor], true)
+					let acc2 = await animateUtils.recolorImage(acc, [characterData.tertiaryColor, characterData.quaternaryColor], true)
+
+					characterCtx.imageSmoothingEnabled = false
+					if (characterData.accessory != 'none')
+						characterCtx.drawImage(acc2, 20, 23, 20, 23, 16, -4, 40, 46)
+					characterCtx.drawImage(ena2, charWidth, 0, charWidth, charHeight, -(charWidth - 36), offsetY - 8, charWidth * 2, charHeight * 2)
+					if (characterData.accessory != 'none')
+						characterCtx.drawImage(acc2, 20, 0, 20, 23, 16, -4, 40, 46)
+					savePreviewContext.drawImage(characterCanvas, offsetX, 0)
+					characterCtx.clearRect(0, 0, 1000, 1000)
+					imageUtils.imgs = {}
+					imageUtils.loaded = 0
+				}
+				return true
+			}
+
+			function setup() {
+				savePreviewContext.imageSmoothingEnabled = false
+				savePreviewContext.shadowOffsetX = -5
+				savePreviewContext.shadowOffsetY = 5
+				savePreviewContext.shadowColor = "rgba(0,0,0,0.3)"
+			}
+
+			function clear() {
+				savePreviewContext.clearRect(0, 0, savePreview.width, savePreview.height)
+			}
+			let savePreview = save.querySelector(".save-previews")
+			let savePreviewContext = savePreview.getContext("2d")
+			setup()
+
 		}
 		let newSaveButton = document.querySelector('#new-save')
 		newSaveButton.addEventListener('click', createSave)
