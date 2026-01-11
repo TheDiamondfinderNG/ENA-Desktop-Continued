@@ -217,14 +217,18 @@ ipcMain.on('right-click', (event, arg) => {
 })
 
 // Custom drag function, a work-around for aero shake
-ipcMain.on('drag-me', (event, offset) => {
+ipcMain.on('drag-me', (event, offsets) => {
+    let [offset, manualOffset] = offsets
     const win = BrowserWindow.fromWebContents(event.sender);
+    const shimejiStates = characterStates[win.id];
 
     let mouse = screen.getCursorScreenPoint()
+    // Moving the Window!
+    if (manualOffset != null)
+        win.setPosition(shimejiStates.dragPos.newX - offset.x + manualOffset.x, shimejiStates.dragPos.newY - offset.y + manualOffset.y)
+    else
     win.setPosition(mouse.x - offset.x, mouse.y - offset.y)
 
-    // Moving the Window!
-    const shimejiStates = characterStates[win.id];
     shimejiStates.isDragging = true;
     const deltaX = shimejiStates.dragPos.newX - shimejiStates.dragPos.oldX;
 
@@ -239,8 +243,7 @@ ipcMain.on('drag-me', (event, offset) => {
     } else if (deltaX < 0) {
         move.state = deltaX < -5 ? 'drag-l' : 'light-drag-l';
         shimejiStates.lastEvent.sender.send('channel1', move.state);
-    } else {
-        if (move.state.includes('drag')) {
+    } else if (move.state.includes('drag')) {
             move.timeout = setTimeout(() => {
                 if (shimejiStates.lastEvent && !shimejiStates.isReleased && (deltaX <= 1 || deltaX >= -1)) {
                     shimejiStates.lastEvent.sender.send('channel1', 'dangle-' + (shimejiStates.direction == 'right' ? 'r' : 'l'));
@@ -248,13 +251,10 @@ ipcMain.on('drag-me', (event, offset) => {
                     move.state = 'dangle';
                 }
             }, 200);
-        } else {
-            if (shimejiStates.lastEvent && !shimejiStates.isReleased) {
+    } else if (shimejiStates.lastEvent && !shimejiStates.isReleased) {
                 shimejiStates.lastEvent.sender.send('channel1', 'dangle-' + (shimejiStates.direction == 'right' ? 'r' : 'l'));
                 move.state = 'dangle';
             }
-        }
-    }
     shimejiStates.isReleased = false;
 });
 

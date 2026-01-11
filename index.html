@@ -47,6 +47,7 @@
         let deltaEnd = performance.now();
         let delta = deltaEnd - deltaStart
         let dragOffset = { x: 0, y: 0 };
+        let touchOffset = null
 
         function getRandomNumber() {
             return Math.random() < 0.5 ? 1 : -1;
@@ -55,19 +56,18 @@
         // Drag functions
 
         function drag() {
-            window.api.send('drag-me', dragOffset);
+            window.api.send('drag-me', [dragOffset, touchOffset]);
             wasDragging = true
         }
         function stopDrag() {
-            window.api.send('stop-drag', '');
+            window.api.send('stop-drag');
             wasDragging = false
         }
 
         // Pet functions
         function pet() {
-            console.log(delta/20, petAmount)
-            petAmount += delta/20
-            window.api.send('pet', petAmount/2);
+            petAmount += delta / 20
+            window.api.send('pet', petAmount / 2);
             wasPetting = true
         }
         function stopPet() {
@@ -80,7 +80,7 @@
             deltaEnd = performance.now();
             delta = deltaEnd - deltaStart
             // Pet decay
-            petAmount -= delta/20*5
+            petAmount -= delta / 20 * 5
 
             if (currentDrag) {
                 drag();
@@ -118,9 +118,30 @@
             currentDrag = false
         });
 
+        // Stylus support
+        document.addEventListener("touchstart", (e) => {
+            // Start dragging
+            currentDrag = true
+            // Set the offset (the point where the ENA was clicked)
+            dragOffset.x = e.touches[0].pageX
+            dragOffset.y = e.touches[0].pageY
+            touchOffset = { ...dragOffset }
+        });
+
+        document.addEventListener("touchmove", (e) => {
+            // touchOffset = { x}
+            // touchOffset = dragOffset
+            touchOffset.x = e.touches[0].pageX
+            touchOffset.y = e.touches[0].pageY
+        });
+
+        document.addEventListener("touchend", () => {
+            currentDrag = false
+            touchOffset = null
+        });
         // When mouse is moved
         document.addEventListener("mousemove", (e) => {
-            petAmount += 7 * delta/20
+            petAmount += 7 * delta / 20
         });
 
         window.api.send('channel1', '');
