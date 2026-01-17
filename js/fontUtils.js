@@ -21,32 +21,137 @@ class FontUtils {
             sup3: {
                 name: "sup3",
                 canvas: null,
-                colors: ["#f86754"]
+                colors: ["#f8b454"]
             },
             sup4: {
                 name: "sup4",
                 canvas: null,
-                colors: ["#f86754"]
+                colors: ["#f8ea54"]
             },
-            mod: {
-                name: "mod",
+            sup5: {
+                name: "sup5",
                 canvas: null,
-                colors: ["#b689ff"]
+                colors: ["#79ff72"]
             },
-            dev: {
-                name: "dev",
+            sup6: {
+                name: "sup6",
                 canvas: null,
-                colors: ["#ff69b4"]
+                colors: ["#6985ff"]
             },
-            system: {
-                name: "system",
+            sup7: {
+                name: "sup7",
                 canvas: null,
-                colors: ["#ffffff"]
+                colors: ["#a06dff"]
             },
-            gray: {
-                name: "gray",
+            sup8: {
+                name: "sup8",
                 canvas: null,
-                colors: ["#555555"]
+                colors: ["#fd87ff"]
+            },
+            sup9: {
+                name: "sup9",
+                canvas: null,
+                colors: ["#77faff"]
+            },
+            sup10: {
+                name: "sup10",
+                canvas: null,
+                colors: ["#959595"]
+            },
+            sup11: {
+                name: "sup11",
+                canvas: null,
+                colors: ["#959595"]
+            },
+            sup12: {
+                name: "sup12",
+                canvas: null,
+                colors: ["#942314"]
+            },
+            sup13: {
+                name: "sup13",
+                canvas: null,
+                colors: ["#985a02"]
+            },
+            sup14: {
+                name: "sup14",
+                canvas: null,
+                colors: ["#8e8200"]
+            },
+            sup15: {
+                name: "sup15",
+                canvas: null,
+                colors: ["#08a300"]
+            },
+            sup16: {
+                name: "sup16",
+                canvas: null,
+                colors: ["#001c99"]
+            },
+            sup17: {
+                name: "sup17",
+                canvas: null,
+                colors: ["#300089"]
+            },
+            sup18: {
+                name: "sup18",
+                canvas: null,
+                colors: ["#9f00a2"]
+            },
+            sup19: {
+                name: "sup19",
+                canvas: null,
+                colors: ["#007b80"]
+            },
+            sup20: {
+                name: "sup20",
+                canvas: null,
+                colors: ["#1f1f1f"]
+            },
+            sup21: {
+                name: "sup21",
+                canvas: null,
+                colors: ["#1f1f1f"]
+            },
+            sup22: {
+                name: "sup22",
+                canvas: null,
+                colors: ["#ff0000"]
+            },
+            sup23: {
+                name: "sup23",
+                canvas: null,
+                colors: ["#ff8400"]
+            },
+            sup24: {
+                name: "sup24",
+                canvas: null,
+                colors: ["#ffff00"]
+            },
+            sup25: {
+                name: "sup25",
+                canvas: null,
+                colors: ["#00ff00"]
+            },
+            sup26: {
+                name: "sup26",
+                canvas: null,
+                colors: ["#0000ff"]
+            },
+            sup27: {
+                name: "sup27",
+                canvas: null,
+                colors: ["#6a00ff"]
+            },
+            sup28: {
+                name: "sup28",
+                canvas: null,
+                colors: ["#ff00ff"]
+            },
+            sup29: {
+                name: "sup29",
+                canvas: null,
+                colors: ["#00ffff"]
             }
         };
         this.letters = {32:4,33:2,34:5,37:8,38:8,39:3,40:4,41:4,42:5,44:2,46:2,58:2,59:2,60:5,62:5,64:7,73:4,74:5,76:5,79:7,81:7,91:4,93:4,96:3,102:5,105:2,106:5,107:5,108:3,116:4,123:5,124:2,125:5,126:7};
@@ -106,9 +211,9 @@ class FontUtils {
         return canvas;
     };
     textSize(message) {
-        var gap = 0;
+        let gap = 0;
         for (let i = 0; i < message.length; i++) {
-            const regex = /[\^]([0-9])([^^]+)/g;
+            const regex = /[\^]([0-9]{1,2})([^^]+)/g;
             let match, array = [], p = 0;
             while ((match = regex.exec(message))) {
                 const n = Number(match[1]);
@@ -116,7 +221,7 @@ class FontUtils {
                 array.push([n, s, p]);
                 p += s.length;
             }
-            var self = this;
+            let self = this;
             array.forEach(function(m) {
                 gap += self.letters[m[1].charCodeAt(i)] != undefined ? self.letters[m[1].charCodeAt(i)] : 6;
             });
@@ -124,9 +229,9 @@ class FontUtils {
         return gap;
     };
     tinySize(message) {
-        var gap = 0;
+        let gap = 0;
         for (let i = 0; i < message.length; i++) {
-            const regex = /[\^]([0-9])([^^]+)/g;
+            const regex = /[\^]([0-9]{1,2})([^^]+)/g;
             let match, array = [], p = 0;
             while ((match = regex.exec(message))) {
                 const n = Number(match[1]);
@@ -134,7 +239,7 @@ class FontUtils {
                 array.push([n, s, p]);
                 p += s.length;
             }
-            var self = this;
+            let self = this;
             array.forEach(function(m) {
                 gap += self.tinys[m[1].charCodeAt(i)] != undefined ? self.tinys[m[1].charCodeAt(i)] : 5;
             });
@@ -146,7 +251,7 @@ class FontUtils {
         var canvas = image;
         var ascii;
         
-        const regex = /[\^]([0-9])([^^]+)/g;
+        const regex = /[\^]([0-9]{1,2})([^^]+)/g;
         let match, array = [], p = 0;
         while ((match = regex.exec(message))) {
             const n = Number(match[1]);
@@ -207,7 +312,7 @@ class FontUtils {
         var canvas = image;
         var ascii;
         
-        const regex = /[\^]([0-9])([^^]+)/g;
+        const regex = /[\^]([0-9]{1,2})([^^]+)/g;
         let match, array = [], p = 0;
         while ((match = regex.exec(message))) {
             const n = Number(match[1]);
@@ -220,7 +325,7 @@ class FontUtils {
             var gap = 0;
             for (let i = 0; i < message.length; i++) {
                 array.forEach(m => {
-                    canvas = m[0] == 8 ? image : this.recolor(image, Object.values(this.colors)[m[0]].name, scale);
+                    canvas = m[0] == 8 ? image : this.recolor(image, Object.values(this.colors)[(m[0] <= 29 && m[0] > 0)? m[0] : 1].name, scale);
                     ascii = Number(m[1].charCodeAt(i) - 32);
                     
                     // Drawing outline

@@ -250,7 +250,8 @@ menu-bar {
 
 .desktop-ena .split-view-view.window-container {
     transition: --var1 .35s ease;
-    transform: translate3d(0, 0, 0);
+    /* All this does is break position: fixed */
+    /* transform: translate3d(0, 0, 0); */
     overflow: auto
 }
 
@@ -1044,9 +1045,69 @@ svg:not(:root).svg-inline--fa {
     font-size: 1.75rem;
 }
 
+.settings-section {
+    padding: 2rem 0 0 !important;
+    border-bottom: #48484833 solid 1px
+}
+
+.settings-section input {
+    display: inline-block;
+    float: right;
+    + slider-bar{
+        max-width: 400px;
+        width: 100%;
+        float:right;
+    }
+}
+
+#confirmation {
+    position: fixed;
+    bottom: -10rem;
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+    width: max-content;
+    z-index: 99;
+    background-color: #181818;
+    border: #484848 1px solid;
+    border-radius: 6px;
+    padding: 1rem;
+    transition: bottom 0.5s;
+    .btn-group .btn{
+        margin: 0.25em
+    }
+}
+
+.warning {
+    float: right;
+    width: 100%;
+    margin: 20px -65px;
+    color: black;
+    font-weight: 700;
+    padding: 0.7rem 1.4rem;
+    background: #FA0C;
+    border: #F70 solid 1px;
+    border-radius: 7px;
+}
+
+.warning::before {
+    content: url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M256 512a256 256 0 1 1 0-512 256 256 0 1 1 0 512zm0-192a32 32 0 1 0 0 64 32 32 0 1 0 0-64zm0-192c-18.2 0-32.7 15.5-31.4 33.7l7.4 104c.9 12.6 11.4 22.3 23.9 22.3 12.6 0 23-9.7 23.9-22.3l7.4-104c1.3-18.2-13.1-33.7-31.4-33.7z"/></svg>');
+    display: inline-block;
+    vertical-align: middle;
+    width: 1rem;
+}
+
+#confirmation.active {
+    bottom: 3rem;
+}
+
 .input-group>.input-group-append>div>.btn {
     border-bottom-left-radius: 0;
     border-top-left-radius: 0;
+}
+
+.settings .input-group-append {
+    float: right;
 }
 
 .dropdown-toggle {
@@ -1056,6 +1117,21 @@ svg:not(:root).svg-inline--fa {
     color: #222;
     z-index: 10;
     pointer-events: none;
+}
+
+
+.aligned {
+    .input-group>.input-group-append>div>.btn {
+        font-size: inherit;
+        font-family: inherit;
+        font-weight: normal;
+    }
+    .dropdown-toggle {
+        top: 2px;
+    }
+    .col-form-label{
+        margin: auto;
+    }
 }
 
 .fa-chevron-down,
@@ -1271,6 +1347,7 @@ input[type="range"]::-webkit-slider-thumb {
     box-shadow: 0 0 3px rgba(0, 0, 0, .5);
     height: 20px;
     width: 20px;
+    cursor: pointer;
 }
 
 input[type=range]::-webkit-slider-runnable-track {
@@ -1395,9 +1472,6 @@ input[type=range]::-webkit-slider-runnable-track {
 label {
     display: inline-block;
     font-weight: 600;
-}
-
-label {
     line-height: 1.4rem;
     margin-bottom: 0;
 }

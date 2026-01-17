@@ -331,7 +331,8 @@ characters.addEventListener('change', (event) => {
         characterPreview.scale = characterPreview.clamp(Number(ipcRenderer.sendSync('get-scale')), 1, 6);
         let characterStates = ipcRenderer.sendSync('get-character-state', id);
         characterPreview.setUsername('^0' + characterStates.characterName + `#${generateNumber(id)}`);
-        characterPreview.setRole('^1<MEMBER>');
+
+        characterPreview.setRole(characterStates.author ? "^"+(characterStates.author.color || 1)+"Made by:"+(characterStates.author.name || characterStates.author ): "");
         const imgPath = path.join(__dirname, 'character');
         let sprites = {
             character: (characterStates.custom ? imgPath + '\\' + characterStates.sprite : 'img/character/' + characterStates.sprite),

@@ -210,7 +210,8 @@
 										<span class="save-top">
 											<span class="label">Save 1</span>
 											<button aria-label="Edit label"
-												class="btn edit-button">
+												class="btn edit-button"
+												title="Edit save title">
 												<fa-icon class="ng-fa-icon">
 													<svg role="img" aria-hidden="true"
 														focusable="false" data-prefix="fas"
@@ -225,7 +226,8 @@
 												</fa-icon>
 											</button>
 											<button aria-label="Favorite"
-													class="btn favorite-button">
+													class="btn favorite-button"
+													title="Unfavorite this item">
 													<fa-icon class="ng-fa-icon">
 														<svg role="img"
 															focusable="false" data-prefix="fas"
@@ -241,7 +243,8 @@
 												</button>
 											<span class="btn-group">
 												<button aria-label="Save current"
-													class="btn btn-info save-button">
+													class="btn btn-info save-button"
+													title="Overwrites the save with the current characters. Shift+Click to skip confirmation">
 													<fa-icon class="ng-fa-icon">
 														<svg role="img" aria-hidden="true"
 															focusable="false" data-prefix="fas"
@@ -256,7 +259,8 @@
 													</fa-icon>
 												</button>
 												<button aria-label="Copy save"
-													class="btn btn-info copy-button">
+													class="btn btn-info copy-button"
+													title="Duplicates this save">
 													<fa-icon class="ng-fa-icon">
 														<svg role="img" aria-hidden="true"
 															focusable="false" data-prefix="fas"
@@ -271,7 +275,8 @@
 													</fa-icon>
 												</button>
 												<button aria-label="Delete save"
-													class="btn btn-danger remove-button">
+													class="btn btn-danger remove-button"
+													title="Deletes the save. Shift+Click to skip confirmation">
 													<fa-icon class="ng-fa-icon">
 														<svg role="img" aria-hidden="true"
 															focusable="false" data-prefix="fas"
@@ -294,7 +299,8 @@
 											</span>
 											<span class="btn-group">
 												<button aria-label="Favorite"
-													class="btn favorite-button">
+													class="btn favorite-button"
+													title="Favorite save. The favorite save is automatically loaded when program starts">
 													<fa-icon class="ng-fa-icon">
 														<svg role="img"
 															focusable="false" data-prefix="fas"
@@ -309,7 +315,8 @@
 													</fa-icon>
 												</button>
 												<button aria-label="Add Characters"
-													class="btn btn-info add-button">
+													class="btn btn-info add-button" 
+													title="Append save's characters to current scene">
 													<fa-icon class="ng-fa-icon">
 														<svg role="img"
 															focusable="false" data-prefix="fas"
@@ -324,7 +331,8 @@
 													</fa-icon>
 												</button>
 												<button aria-label="Load"
-													class="btn btn-info load-button">
+													class="btn btn-info load-button"
+													title="Removes all current characters and loads save">
 													<fa-icon class="ng-fa-icon">
 														<svg role="img"
 															focusable="false" data-prefix="fas"
@@ -561,9 +569,8 @@
 				if (!shiftHeld)
 					if (!confirm("Are you sure you want to override this save? This cannot be undone"))
 						return
-				ipcRenderer.send("save-current-characters", dataLabel)
-				saveData = ipcRenderer.sendSync("fetch-saves")
-				savesDrawn = false
+				saveData = ipcRenderer.sendSync("save-current-characters", dataLabel)
+				draw(dataLabel)
 			}
 
 			save.querySelector('.load-button').onclick = (e) => {

@@ -112,15 +112,168 @@
 																</nav>
 															</menu-bar>
 														</div>
-														<main class="row" style="text-align: center;">
-															<h1>THIS IS A WIP</h1>
-															<h2>This section will include options for monitor isolation, character importing from zips, and </h2>
+														<main class="settings row"
+															style="text-align: left; opacity: 0; transition: opacity 0.3s;">
+															<div id="confirmation">
+																<div class="btn-group">
+																	<button id="discard-btn"
+																		class="btn btn-lg btn-default"
+																		onclick="discardValues()">Discard</button>
+																	<button aria-label="Save Settings" id="save-btn"
+																		class="btn btn-lg btn-default"
+																		onclick="saveValues()">Save</button>
+																</div>
+															</div>
+															<div class="settings-section" id="monitor">
+																<h4>Monitor Settings</h4>
+																<hr>
+																<div class="row form-group">
+																	<label class="col-sm-4 col-form-label"
+																		title="Keep ENAs in the monitor they're in until dragged to a different pne">
+																		Monitor lock
+																	</label>
+																	<div class="col-sm-8">
+																		<div class="input-group-append">
+																			<input type="checkbox" id="monitor-lock"
+																				class="form-check-input ng-valid ng-dirty ng-touched">
+																		</div>
+																	</div>
+																</div>
+																<div class="row form-group">
+																	<label class="col-sm-4 col-form-label"
+																		title="When walking, always lock to the floor, even if it doesn't make sense">
+																		Lock to floor
+																	</label>
+																	<div class="col-sm-8">
+																		<div class="input-group-append">
+																			<div>
+																				<select id="floor-lock"
+																					class="btn btn-dark"
+																					style="width: 100%;">
+																					<option disabled selected value>
+																					</option>
+																					<option value="0"
+																						title="Due to the way it's programmed, they will still walk up gaps less than their height">
+																						Never</option>
+																					<option value="1">
+																						Only nearby floors</option>
+																					<option value="2">
+																						Only going up</option>
+																					<option value="3">
+																						Only going down</option>
+																					<option value="4">
+																						Always</option>
+																				</select>
+																				<label class="dropdown-toggle"></label>
+																			</div>
+																		</div>
+																	</div>
+																	<span id="floor-lock-dist-wrapper"
+																		style="width: 100%; display: none;">
+																		<label class="col-sm-4 col-form-label"
+																			title="Max distance for a floor to be considered close (in pixels)">
+																			Max floor distance
+																		</label>
+																		<div class="col-sm-8">
+																			<div class="input-group-append">
+																				<input type="number" pattern="[0-9]*"
+																					value="0" maxlength="5"
+																					class="form-control form-control-sm ms-1 ng-pristine ng-valid ng-touched"
+																					id="floor-lock-dist" step="1"
+																					min="0" max="9999">
+																			</div>
+																		</div>
+																	</span>
+																</div>
+															</div>
+															<div class="settings-section" id="pet">
+																<h4>ENA Settings</h4>
+																<hr>
+																<div class="row form-group">
+																	<label class="col-sm-4 col-form-label"
+																		title="How fast an ENA gets relaxed when you pet them (by percentage)">
+																		Pet strength
+																	</label>
+																	<div class="col-sm-8">
+																		<input type="number" pattern="[0-9]*" value="50"
+																			maxlength="3"
+																			class="form-control form-control-sm ms-1 ng-pristine ng-valid ng-touched"
+																			oninput="strengthrange.value=value"
+																			id="strengthnumber" step="1" min="0"
+																			max="Infinity">
+																		<slider-bar>
+																			<input class="flex-grow-1" type="range"
+																				min="0" max="100" value="20"
+																				oninput="strengthnumber.value=value"
+																				id="strengthrange"
+																				style="background-size: 0% 100%;">
+																		</slider-bar>
+																	</div>
+																	<span id="pet-decay-wrapper"
+																		style="display:contents"> <label
+																			class="col-sm-4 col-form-label"
+																			title="How fast an ENA gets back up after being pet">
+																			Pet decay
+																		</label>
+																		<div class="col-sm-8">
+																			<input type="number" pattern="[0-9]*"
+																				value="50" maxlength="3"
+																				class="form-control form-control-sm ms-1 ng-pristine ng-valid ng-touched"
+																				oninput="decayrange.value=value"
+																				id="decaynumber" step="1" min="0"
+																				max="Infinity">
+																			<slider-bar>
+																				<input class="flex-grow-1" type="range"
+																					min="0" max="100" value="50"
+																					oninput="decaynumber.value=value"
+																					id="decayrange"
+																					style="background-size: 0% 100%;">
+																			</slider-bar><br />
+																			<div class="warning" style="display: none;">
+																				&nbsp;WARNING: Having the pet decay at 0
+																				will result in you having to pick up
+																				ENAs to reset them.
+																			</div>
+																		</div>
+																	</span>
+																</div>
+																<div class="row form-group">
+																	<label class="col-sm-4 col-form-label"
+																		title="Amount of speed kept every bounce">
+																		Bounciness / Elasticity
+																	</label>
+																	<div class="col-sm-8">
+																		<input type="number" pattern="[0-9]*"
+																			value="100" maxlength="3"
+																			class="form-control form-control-sm ms-1 ng-pristine ng-valid ng-touched"
+																			oninput="bouncinessrange.value=value"
+																			id="bouncinessnumber" step="1" min="0"
+																			max="Infinity">
+																		<slider-bar>
+																			<input class="flex-grow-1" type="range"
+																				min="0" max="100" value="100"
+																				oninput="bouncinessnumber.value=value"
+																				id="bouncinessrange"
+																				style="background-size: 0% 100%;">
+																		</slider-bar><br />
+																		<div class="warning" style="display: none;">
+																			&nbsp;WARNING: A bounciness of more than
+																			100% will cause ENA to gain speed and have
+																			unexpected behavior
+																			<!-- I put this warning after the comment in physics.js so I did lie a bit here -->
+																		</div>
+																	</div>
+																</div>
+															</div>
+															<h1 style="text-align: center; padding: 1em;">Still a WIP,
+																more to come</h1>
 														</main>
 														<div class="text-center text-muted">
 															<div class="tinyface"></div>
 														</div>
 														<footer class="text-muted text-nowrap">
-															<div class="app-version">version <b class="me-2">v1.1.0 PRERELEASE
+															<div class="app-version">version <b class="me-2">v1.1.0
+																	PRERELEASE
 																	<strong>(Community Continued)</strong></b></div>
 															<div class="text-end">
 																<div class="d-flex flex-wrap">
@@ -155,6 +308,78 @@
 	<script src="js/ponyUtils.js"></script>
 	<script src="js/fixToTop.js"></script>
 	<script>
+		const monitorLock = document.querySelector("#monitor-lock")
+		const floorLock = document.querySelector("#floor-lock")
+		const floorLockDist = document.querySelector("#floor-lock-dist")
+		const petStrength = document.querySelector("#strengthnumber")
+		const petDecay = document.querySelector("#decaynumber")
+		const bounciness = document.querySelector("#bouncinessnumber")
+		function initValues() {
+			let settings = ipcRenderer.sendSync("reload-preferences")
+			monitorLock.checked = ipcRenderer.sendSync("get-monitor-lock")
+			floorLock.value = ipcRenderer.sendSync("get-floor-snap")
+			floorLockDist.value = ipcRenderer.sendSync("get-floor-snap-dist")
+			petStrength.value = ipcRenderer.sendSync("get-pet-strength") * 10
+			petDecay.value = ipcRenderer.sendSync("get-pet-decay") * 10
+			bounciness.value = ipcRenderer.sendSync("get-bounciness") * 100
+			document.querySelector("#strengthrange").value = petStrength.value
+			document.querySelector("#decayrange").value = petDecay.value
+			document.querySelector("#bouncinessrange").value = bounciness.value
+			document.querySelector("#monitor").style.display = ipcRenderer.sendSync("get-displays").length > 1 ? "initial" : "none"
+			document.querySelector("#pet-decay-wrapper").style.display = petStrength.value > 0 ? "contents" : "none"
+			petDecay.parentElement.querySelector(".warning").style.display = petDecay.value > 0 ? "none" : "initial"
+			bounciness.parentElement.querySelector(".warning").style.display = bounciness.value > 100 ? "initial" : "none"
+			document.querySelector("#floor-lock-dist-wrapper").style.display = floorLock.value == 1 ? "contents" : "none"
+
+		}
+
+		function applyValues() {
+			ipcRenderer.send("update-floor-snap", Number(floorLock.value))
+			ipcRenderer.send("update-floor-snap-dist", Number(floorLockDist.value))
+			ipcRenderer.send("update-monitor-lock", monitorLock.checked)
+			ipcRenderer.send("update-pet-strength", petStrength.value / 10)
+			ipcRenderer.send("update-pet-decay", petDecay.value / 10)
+			ipcRenderer.send("update-bounciness", bounciness.value / 100)
+		}
+
+		function saveValues() {
+			document.querySelector("#confirmation").classList.remove("active")
+			ipcRenderer.send("save-settings")
+		}
+
+		function discardValues() {
+			document.querySelector("#confirmation").classList.remove("active")
+			initValues()
+		}
+
+		floorLock.onchange = () => {
+			document.querySelector("#floor-lock-dist-wrapper").style.display = floorLock.value == 1 ? "contents" : "none"
+		}
+		petStrength.onchange = () => {
+			document.querySelector("#pet-decay-wrapper").style.display = petStrength.value > 0 ? "contents" : "none"
+		}
+		document.querySelector("#strengthrange").onchange = () => {
+			document.querySelector("#pet-decay-wrapper").style.display = petStrength.value > 0 ? "contents" : "none"
+		}
+		petDecay.onchange = () => {
+			petDecay.parentElement.querySelector(".warning").style.display = petDecay.value > 0 ? "none" : "initial"
+		}
+		document.querySelector("#decayrange").onchange = () => {
+			petDecay.parentElement.querySelector(".warning").style.display = petDecay.value > 0 ? "none" : "initial"
+		}
+		bounciness.onchange = () => {
+			bounciness.parentElement.querySelector(".warning").style.display = bounciness.value > 100 ? "initial" : "none"
+		}
+		document.querySelector("#bouncinessrange").onchange = () => {
+			bounciness.parentElement.querySelector(".warning").style.display = bounciness.value > 100 ? "initial" : "none"
+		}
+		document.querySelector("main").onchange = () => {
+			applyValues()
+			document.querySelector("#confirmation").classList.add("active")
+		}
+		initValues()
+
+		document.querySelector("main").style.opacity = "1"
 	</script>
 </body>
 

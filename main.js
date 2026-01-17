@@ -32,6 +32,13 @@ let currentHide = false;
 let currentIgnore = false;
 let currentScale = 2;
 let settingScale = 4; // manage.html Scale
+let monitorLock = false;
+let floorSnap = 1;
+let floorSnapDone = false;
+let floorSnapDistance = 25;
+let petStrength = 2;
+let petDecay = 5;
+let bounciness = 1
 let darkness = 50;
 let allowCustoms = false;
 let store_characters = {};
@@ -47,8 +54,8 @@ ipcMain.setMaxListeners(10);
 
 // Watermark
 console.log('\x1b[36m%s\x1b[0m', 'Desktop ENA developed by TanyaHastur, all rights reserved.');
-if (devMode) { 
-    console.log('\x1b[42m\x1b[30m\x1b[4m%s\x1b[0m', "     !!!DEVELOPER MODE ENABLED!!!     ") 
+if (devMode) {
+    console.log('\x1b[42m\x1b[30m\x1b[4m%s\x1b[0m', "     !!!DEVELOPER MODE ENABLED!!!     ")
 }
 
 console.log(`Running in ${isAsarFile ? "asar file" : "directory"}, saves and preferences will be loaded and saved ${isAsarFile ? "ex" : "in"}ternally`)
@@ -60,7 +67,13 @@ async function savePreferences() {
         scale: currentScale,
         background: currentBackground,
         allow_custom_shadows: allowCustoms,
-        intensity: darkness
+        intensity: darkness,
+        monitor_lock: monitorLock,
+        floor_snap: floorSnap,
+        floor_snap_dist: floorSnapDistance,
+        pet_strength: petStrength,
+        pet_decay: petDecay,
+        bounciness: bounciness
     };
     try {
         await fs.promises.writeFile(configPath, JSON.stringify(preferences), "utf-8");
@@ -83,14 +96,24 @@ async function loadPreferences() {
             if (preferences.scale) currentScale = preferences.scale;
             if (preferences.background) currentBackground = preferences.background;
             if (preferences.allow_custom_shadows) allowCustoms = preferences.allow_custom_shadows;
-            if (preferences.intensity) darkness = preferences.intensity;
+            if (typeof preferences.intensity != "undefined") darkness = preferences.intensity;
+            if (preferences.monitor_lock) monitorLock = preferences.monitor_lock;
+            if (typeof preferences.floor_snap != "undefined") floorSnap = preferences.floor_snap;
+            if (typeof preferences.floor_snap_dist != "undefined") floorSnapDistance = preferences.floor_snap_dist
+            if (typeof preferences.pet_strength != "undefined") petStrength = preferences.pet_strength
+            if (typeof preferences.pet_decay != "undefined") petDecay = preferences.pet_decay
+            if (typeof preferences.bounciness != "undefined") bounciness = preferences.bounciness
         } catch (err) {
             console.error("Error loading preferences: ", err);
         }
     }
 }
 
-// Save saves to the saves.json file
+/**
+ * Save saves to the saves.json file
+ * @param {object} data - JSON string data
+ * @returns {Promise<void>}
+ */
 async function updateSaves(data) {
     try {
         await fs.promises.writeFile(savePath, JSON.stringify(data, null, 4), "utf-8");
@@ -99,7 +122,10 @@ async function updateSaves(data) {
     }
 }
 
-// Load saves from the saves.json file
+/**
+ * Fetches the saves in saves.json
+ * @returns {Promise<void|object>}
+ */
 async function getSaves() {
     if (fs.existsSync(savePath)) {
         let backupPath = path.join(dataPath, 'saves_bak.json')
@@ -166,7 +192,8 @@ loadPreferences().then(() => {
 });
 
 app.on('before-quit', () => {
-    settings.destroy()
+    if (settings)
+        settings.destroy()
 })
 
 ipcMain.handle('get-background', async (event) => {
@@ -181,6 +208,11 @@ ipcMain.handle('get-background', async (event) => {
 
 ipcMain.handle('get-characters', async (event) => {
     return store_characters;
+});
+
+
+ipcMain.on('get-displays', async (event) => {
+    event.returnValue = screen.getAllDisplays()
 });
 
 ipcMain.on('direction', (event, arg) => {
@@ -199,6 +231,8 @@ ipcMain.on('channel1', (event, arg) => {
         if (characterStates[win.id].lastEvent) {
             characterStates[win.id].lastEvent.sender.send('setImagePath', path.join(__dirname, 'character'));
             characterStates[win.id].lastEvent.sender.send('setIsCustom', characterStates[win.id].custom);
+            characterStates[win.id].lastEvent.sender.send('setPetStrength', petStrength);
+            characterStates[win.id].lastEvent.sender.send('setPetDecay', petDecay);
             characterStates[win.id].lastEvent.sender.send('changeSprite', characterStates[win.id].sprite, characterStates[win.id].blink);
             characterStates[win.id].lastEvent.sender.send('changeScale', currentScale);
             characterStates[win.id].lastEvent.sender.send('changeAccessory', characterStates[win.id].accessory);
@@ -227,9 +261,10 @@ ipcMain.on('drag-me', (event, offsets) => {
     if (manualOffset != null)
         win.setPosition(shimejiStates.dragPos.newX - offset.x + manualOffset.x, shimejiStates.dragPos.newY - offset.y + manualOffset.y)
     else
-    win.setPosition(mouse.x - offset.x, mouse.y - offset.y)
+        win.setPosition(mouse.x - offset.x, mouse.y - offset.y)
 
     shimejiStates.isDragging = true;
+    shimejiStates.isFalling = true;
     const deltaX = shimejiStates.dragPos.newX - shimejiStates.dragPos.oldX;
 
     let move = {
@@ -244,17 +279,17 @@ ipcMain.on('drag-me', (event, offsets) => {
         move.state = deltaX < -5 ? 'drag-l' : 'light-drag-l';
         shimejiStates.lastEvent.sender.send('channel1', move.state);
     } else if (move.state.includes('drag')) {
-            move.timeout = setTimeout(() => {
-                if (shimejiStates.lastEvent && !shimejiStates.isReleased && (deltaX <= 1 || deltaX >= -1)) {
-                    shimejiStates.lastEvent.sender.send('channel1', 'dangle-' + (shimejiStates.direction == 'right' ? 'r' : 'l'));
-                    move.timeout = null;
-                    move.state = 'dangle';
-                }
-            }, 200);
-    } else if (shimejiStates.lastEvent && !shimejiStates.isReleased) {
+        move.timeout = setTimeout(() => {
+            if (shimejiStates.lastEvent && !shimejiStates.isReleased && (deltaX <= 1 || deltaX >= -1)) {
                 shimejiStates.lastEvent.sender.send('channel1', 'dangle-' + (shimejiStates.direction == 'right' ? 'r' : 'l'));
+                move.timeout = null;
                 move.state = 'dangle';
             }
+        }, 200);
+    } else if (shimejiStates.lastEvent && !shimejiStates.isReleased) {
+        shimejiStates.lastEvent.sender.send('channel1', 'dangle-' + (shimejiStates.direction == 'right' ? 'r' : 'l'));
+        move.state = 'dangle';
+    }
     shimejiStates.isReleased = false;
 });
 
@@ -274,7 +309,7 @@ ipcMain.on('stop-drag', (event) => {
     shimejiStates.isReleased = true;
 })
 
-// Custom drag function, a work-around for aero shake
+// Petting function
 ipcMain.on('pet', (event, petAmount) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     const shimejiStates = characterStates[win.id];
@@ -286,7 +321,7 @@ ipcMain.on('pet', (event, petAmount) => {
     }
 });
 
-// Prevent being pinned to the wall
+// Prevent petting from being locked (unless explicitly told to do so)
 ipcMain.on('stop-pet', (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     characterStates[win.id].isPetting = false
@@ -299,6 +334,7 @@ ipcMain.on('duplicate-character', (event, id) => {
         characterName: characterStates[id].characterName,
         spriteImage: characterStates[id].sprite,
         blinkImage: characterStates[id].blink,
+        author: characterStates[id].author,
         isCustomCharacter: characterStates[id].custom,
         frameWidth: characterStates[id].width,
         frameHeight: characterStates[id].height,
@@ -319,11 +355,97 @@ ipcMain.on('get-background', (event) => {
 
 ipcMain.on('update-scale', (event, scale) => {
     settingScale = scale;
+    savePreferences();
 });
 
 ipcMain.on('get-scale', (event) => {
     event.returnValue = settingScale;
 });
+
+ipcMain.on('update-monitor-lock', (event, bool) => {
+    monitorLock = bool;
+});
+
+ipcMain.on("reload-preferences", e => {
+    loadPreferences().then(() => {
+        e.returnValue = {
+            currentLanguage: currentLanguage,
+            currentScale: currentScale,
+            currentBackground: currentBackground,
+            allowCustoms: allowCustoms,
+            darkness: darkness,
+            monitorLock: monitorLock,
+            floorSnap: floorSnap,
+            floorSnapDistance: floorSnapDistance,
+            petStrength: petStrength,
+            petDecay: petDecay,
+            bounciness: bounciness
+        }
+    })
+})
+
+ipcMain.on('get-monitor-lock', (event) => {
+    event.returnValue = monitorLock;
+});
+
+ipcMain.on('update-floor-snap', (event, bool) => {
+    floorSnap = bool;
+});
+
+ipcMain.on('get-floor-snap', (event) => {
+    event.returnValue = floorSnap;
+});
+
+ipcMain.on('update-floor-snap-dist', (event, val) => {
+    floorSnapDistance = val;
+});
+
+ipcMain.on('get-floor-snap-dist', (event) => {
+    event.returnValue = floorSnapDistance;
+});
+
+
+ipcMain.on('update-pet-strength', (event, val) => {
+    if (petStrength == val) return
+    petStrength = val;
+    for (const character in characterStates) {
+        characterStates[character].lastEvent.sender.send('setPetStrength', val);
+    }
+});
+
+ipcMain.on('get-pet-strength', (event) => {
+    for (const character in characterStates) {
+        characterStates[character].lastEvent.sender.send('setPetStrength', petStrength);
+    }
+    event.returnValue = petStrength;
+});
+
+ipcMain.on('update-pet-decay', (event, val) => {
+    if (petDecay == val) return
+    console.log("update d", petDecay, "=>", val)
+    petDecay = val;
+    for (const character in characterStates) {
+        characterStates[character].lastEvent.sender.send('setPetDecay', val);
+    }
+});
+
+ipcMain.on('get-pet-decay', (event) => {
+    for (const character in characterStates) {
+        characterStates[character].lastEvent.sender.send('setPetDecay', petDecay);
+    }
+    event.returnValue = petDecay;
+
+});
+
+ipcMain.on('update-bounciness', (event, val) => {
+    bounciness = val;
+});
+
+ipcMain.on('get-bounciness', (event) => {
+    event.returnValue = bounciness;
+});
+
+ipcMain.on('save-settings', savePreferences)
 
 ipcMain.on('update-darkness', (event, number) => {
     darkness = number;
@@ -361,6 +483,7 @@ ipcMain.on('save-current-characters', (event, save) => {
             let character = characterStates[characterId]
             saveData.characters.push({
                 characterName: character.characterName,
+                author: character.author,
                 spriteImage: character.sprite,
                 blinkImage: character.blink,
                 isCustomCharacter: character.custom,
@@ -375,7 +498,7 @@ ipcMain.on('save-current-characters', (event, save) => {
             })
         }
         updateSaves(structuredClone(saves)).then(() =>
-            event.returnValue = ""
+            event.returnValue = structuredClone(saves)
         );
 
     })
@@ -436,6 +559,10 @@ ipcMain.on('update-character-state', (event, id, newState) => {
     }
 });
 
+/**
+ * Cleans an object
+ * @param {object} object
+ */
 function sanitizeObject(object) {
     let cleanObject = {};
     for (let key in object) {
@@ -463,6 +590,11 @@ const win_config = {
     },
 }
 
+/**
+ * Create a browser window with preset options
+ * @param {object} options - An object storing the browser options
+ * @returns {BrowserWindow}
+ */
 function createBrowserWindow(options) {
     const windowOptions = { ...win_config };
     if (options) Object.assign(windowOptions, options);
@@ -554,6 +686,7 @@ function updateTray() {
             type: 'normal',
             click: () => createShimejiWindow({
                 characterName: character.name,
+                author: character.author,
                 spriteImage: character.sprite_path,
                 blinkImage: character.blink_path,
                 isCustomCharacter: true,
@@ -740,6 +873,10 @@ app.whenReady().then(() => {
     updateTray();
 });
 
+/**
+ * Change the language based on it's 2 letter shortening
+ * @param {string} lang - Language
+ */
 function changeLanguage(lang) {
     currentLanguage = lang;
     translations = require(`./lang/menu_${currentLanguage}.json`);
@@ -751,7 +888,11 @@ function changeLanguage(lang) {
     savePreferences();
 }
 
-function changeScale(scale) { // fix this
+/**
+ * Change scale of the characters
+ * @param {number} scale
+ */
+function changeScale(scale) { // fix this // fix WHAT tanya??
     currentScale = scale;
     for (const wins of windows) {
         let display = screen.getPrimaryDisplay();
@@ -772,6 +913,11 @@ function changeScale(scale) { // fix this
     savePreferences();
 }
 
+/**
+ * Change a characters accessory
+ * @param {string} name - Accessory name
+ * @param {BrowserWindow} win - ENA window
+ */
 function changeAccessory(name, win) {
     const shimejiStates = characterStates[win.id];
     shimejiStates.accessory = name;
@@ -780,6 +926,10 @@ function changeAccessory(name, win) {
     }
 }
 
+/**
+ * Initialize function for ENA (if it exists)
+ * @param {BrowserWindow | undefined} [win]
+ */
 function onInit(win) {
     if (win === undefined) { return; }
     let last = Date.now();
@@ -790,6 +940,10 @@ function onInit(win) {
     }, 1000 / 60);
 }
 
+/**
+ * Destroy function for ENA
+ * @param {BrowserWindow} win - ENA window being destroyed
+ */
 function onDestroy(win) {
     const index = windows.findIndex(w => w.id === win.id);
     if (index !== -1) { windows.splice(index, 1); }
@@ -802,6 +956,11 @@ function onDestroy(win) {
     }
 }
 
+/**
+ * Update ENA
+ * @param {number} delta - Time between last update
+ * @param {BrowserWindow} win - ENA to update
+ */
 async function update(delta, win) {
     if (characterStates[win.id] === undefined) { return; }
 
@@ -835,6 +994,11 @@ async function update(delta, win) {
     }
 }
 
+/**
+ * Fetch a display at position
+ * @param {number} xPosition
+ * @param {number} yPosition
+ */
 function getDisplayForPosition(xPosition, yPosition) {
     const displays = screen.getAllDisplays();
     for (const display of displays) {
@@ -862,15 +1026,46 @@ function getDisplaysWidth() {
     return totalWidth;
 }
 
-function setCollision(win) {
 
+/**
+ * floorSnapCheck - Check if ENA should snap to the floor
+ * @param {number} y - ENA y-coord
+ * @param {number} height - Height of ENA
+ * @param {number} floor - ENA's floor
+ * @returns {boolean}
+ */
+
+function floorSnapCheck(y, height, floor) {
+    switch (floorSnap) {
+        case 0: // Never
+            return false;
+        case 1: // Only close
+            return Math.abs(y + height - floor) < floorSnapDistance || Math.abs(y + height) < floorSnapDistance
+        case 2: // Only up
+            return y > floor;
+        case 3: // Only down
+            return y + height < floor;
+        case 4: // Always
+            return true;
+        default: // I guess
+            return false;
+    }
+}
+
+/**
+ * Run a collision check on an ENA
+ * @param {BrowserWindow | undefined} win - ENA to check collision on
+ */
+
+function setCollision(win) {
+    floorSnapDone = false
     // Get displays
     const displays = screen.getAllDisplays();
     // Window position and size
     let [x, y] = win.getPosition();
     let [winWidth, winHeight] = win.getSize();
     // Current monitor position
-    const bounds = getDisplayForPosition(x, y)
+    let bounds = getDisplayForPosition(x, y)
     let { width, height } = (bounds ?? displays[0]).workAreaSize;
 
 
@@ -878,11 +1073,12 @@ function setCollision(win) {
     if (bounds) {
         // Not in the void, reset timer
         characterStates[win.id].voidTimer = -1
-
-        characterStates[win.id].lastRoofY = bounds.bounds.y
+        if (!(monitorLock && !characterStates[win.id].isDragging && characterStates[win.id].lastFloorY != Infinity)) {
+            characterStates[win.id].lastLeftWall = bounds.bounds.x + (monitorLock ? 3 : 1)
+            characterStates[win.id].lastRightWall = bounds.bounds.x + bounds.bounds.width
+        }
         characterStates[win.id].lastFloorY = bounds.bounds.y + (!winIsFullscreen ? bounds.workAreaSize.height : bounds.size.height)
-        characterStates[win.id].lastLeftWall = bounds.bounds.x
-        characterStates[win.id].lastRightWall = bounds.bounds.x + bounds.bounds.width
+        characterStates[win.id].lastRoofY = bounds.bounds.y
     }
 
     // If window is removed or being dragged, disable collision and unnecessary void detection
@@ -892,24 +1088,53 @@ function setCollision(win) {
     characterStates[win.id].voidTimer++
 
     if (displays.length > 1) {
-
         // Bouncing
-        if (x + winWidth > characterStates[win.id].lastRightWall && !getDisplayForPosition(x + winWidth, y)) { // Right
-            characterStates[win.id].v_speed_x *= -1;
-            characterStates[win.id].direction = 'left';
-            characterStates[win.id].dx = (-1 * characterStates[win.id].scale * characterStates[win.id].speed);
-            win.setPosition(characterStates[win.id].lastRightWall - winWidth, y);
-            if (characterStates[win.id].lastEvent && characterStates[win.id].state != 'view' && !characterStates[win.id].isFalling && !characterStates[win.id].isReleased) {
-                characterStates[win.id].lastEvent.sender.send('channel1', 'walk-' + (characterStates[win.id].direction === 'right' ? 'r' : 'l'));
+        if (x + winWidth >= characterStates[win.id].lastRightWall && (!getDisplayForPosition(x + winWidth, y + winHeight) || monitorLock)) { // Right
+            let check = false
+            let newDispY = Infinity
+            if (characterStates[win.id].direction == 'right')
+                displays.forEach(disp => {
+                    if (disp.bounds.x == characterStates[win.id].lastRightWall) {
+                        check = true
+                        newDispY = Math.min(!winIsFullscreen ? disp.workAreaSize.height : disp.size.height, newDispY)
+                    }
+                })
+            if (check && !characterStates[win.id].isFalling && characterStates[win.id].lastFloorY >= newDispY && floorSnapCheck(y, winHeight, newDispY)) {
+                win.setPosition(x + winWidth, newDispY - winHeight);
+                // console.log("Huh??")
+                floorSnapDone = true
+            }
+            else {
+                characterStates[win.id].v_speed_x *= -(characterStates[win.id].isBouncing || !characterStates[win.id].isFalling) * (!characterStates[win.id].isFalling || bounciness);
+                characterStates[win.id].direction = 'left';
+                characterStates[win.id].dx = (-(characterStates[win.id].isBouncing || !characterStates[win.id].isFalling) * characterStates[win.id].scale * characterStates[win.id].speed * (!characterStates[win.id].isFalling || bounciness))
+                win.setPosition(characterStates[win.id].lastRightWall - winWidth, y);
+                if (characterStates[win.id].lastEvent && characterStates[win.id].state != 'view' && !characterStates[win.id].isFalling && !characterStates[win.id].isReleased) {
+                    characterStates[win.id].lastEvent.sender.send('channel1', 'walk-' + (characterStates[win.id].direction === 'right' ? 'r' : 'l'));
+                }
             }
         }
-        if (x < characterStates[win.id].lastLeftWall && !bounds) { // Left
-            characterStates[win.id].v_speed_x = Math.abs(characterStates[win.id].v_speed_x);
-            characterStates[win.id].direction = 'right';
-            characterStates[win.id].dx = (1 * characterStates[win.id].scale * characterStates[win.id].speed);
-            win.setPosition(characterStates[win.id].lastLeftWall, y);
-            if (characterStates[win.id].lastEvent && characterStates[win.id].state != 'view' && !characterStates[win.id].isFalling && !characterStates[win.id].isReleased) {
-                characterStates[win.id].lastEvent.sender.send('channel1', 'walk-' + (characterStates[win.id].direction === 'right' ? 'r' : 'l'));
+        if (x <= characterStates[win.id].lastLeftWall && (!bounds || monitorLock)) { // Left
+            let check = false
+            let newDispY = Infinity
+            displays.forEach(disp => {
+                if (disp.bounds.x + disp.bounds.width == characterStates[win.id].lastLeftWall) {
+                    check = true
+                    newDispY = Math.min(!winIsFullscreen ? disp.workAreaSize.height : disp.size.height, newDispY)
+                }
+            })
+            if (check && !characterStates[win.id].isFalling && characterStates[win.id].lastFloorY >= newDispY && floorSnapCheck(y, winHeight, newDispY)) {
+                win.setPosition(x, newDispY - winHeight);
+                floorSnapDone = true
+            }
+            else{
+                characterStates[win.id].v_speed_x = Math.abs(characterStates[win.id].v_speed_x) * (characterStates[win.id].isBouncing || !characterStates[win.id].isFalling || bounciness);
+                characterStates[win.id].direction = 'right';
+                characterStates[win.id].dx = ((characterStates[win.id].isBouncing || !characterStates[win.id].isFalling) * characterStates[win.id].scale * characterStates[win.id].speed * (!characterStates[win.id].isFalling || bounciness));
+                win.setPosition(characterStates[win.id].lastLeftWall, y);
+                if (characterStates[win.id].lastEvent && characterStates[win.id].state != 'view' && !characterStates[win.id].isFalling && !characterStates[win.id].isReleased) {
+                    characterStates[win.id].lastEvent.sender.send('channel1', 'walk-' + (characterStates[win.id].direction === 'right' ? 'r' : 'l'));
+                }
             }
         }
 
@@ -922,7 +1147,7 @@ function setCollision(win) {
             characterStates[win.id].v_speed_y = 0;
             characterStates[win.id].v_speed_x = 0;
 
-            win.setPosition(characterStates[win.id].lastRightWall / 2, 0)
+            win.setPosition(Math.round((characterStates[win.id].lastRightWall-characterStates[win.id].lastLeftWall) / 2 + characterStates[win.id].lastLeftWall), characterStates[win.id].lastFloorY)
             return;
         }
 
@@ -981,6 +1206,10 @@ function setCollision(win) {
     }
 }
 
+/**
+ * Run a gravity check on an ENA
+ * @param {BrowserWindow | undefined} win - ENA to run check in
+ */
 function startGravity(win) {
     if (win == undefined) { return; }
 
@@ -995,14 +1224,24 @@ function startGravity(win) {
         if (bounds) {
             // Aplica el efecto de gravedad
             if (y + winHeight < (!winIsFullscreen ? (bounds.workAreaSize.height + bounds.workArea.y) : (bounds.size.height + bounds.bounds.y))) {
-                win.setPosition(x, y + shimejiStates.dy);
-
-                shimejiStates.isFalling = true;
+                // If close to the ground (according to settings) while walking, snap to it to prevent walking reset
+                if (
+                    !shimejiStates.isFalling &&
+                    floorSnapCheck(y, winHeight, bounds.workAreaSize.height) &&
+                    !floorSnapDone
+                ) {
+                    win.setPosition(x, characterStates[win.id].lastFloorY - winHeight);
+                }
+                else {
+                    win.setPosition(x, y + shimejiStates.dy);
+                    shimejiStates.isFalling = true;
+                }
             } else {
                 shimejiStates.v_speed_x = 0;
                 shimejiStates.v_speed_y = 0;
                 // Si el personaje está en el suelo
-                win.setPosition(x + shimejiStates.dx, (characterStates[win.id].lastFloorY - winHeight));
+                if (!floorSnapDone) // Prevent up-snaps from being reverted
+                    win.setPosition(Math.floor(x + shimejiStates.dx), (characterStates[win.id].lastFloorY - winHeight));
                 shimejiStates.isFalling = false;
                 // Actualizamos la animación de dangling o falling a idle o walk
                 if (!shimejiStates.isSitting && !shimejiStates.isPetting) {
@@ -1020,12 +1259,16 @@ function startGravity(win) {
     // Physics
     setPhysics(win);
     // Sitting Gravity
-    if (shimejiStates.lastEvent && !shimejiStates.isFalling && (shimejiStates.isSitting || shimejiStates.isSitting) && !shimejiStates.isDragging) {
+    if (shimejiStates.lastEvent && !shimejiStates.isFalling && (shimejiStates.isSitting || shimejiStates.isPetting) && !shimejiStates.isDragging) {
         shimejiStates.lastEvent.sender.send('channel1', 'sit-' + (shimejiStates.direction === 'right' ? 'r' : 'l'));
         shimejiStates.dx = 0;
     }
 }
 
+/**
+ * Add a right click menu to an ENA
+ * @param {BrowserWindow | undefined} win - ENA to add menu to
+ */
 function buildMenu(win) {
     if (win == undefined) { return; }
     if (characterStates[win.id] === undefined) { return; }
@@ -1053,13 +1296,14 @@ function buildMenu(win) {
         console.error('Error reading config file:', err);
     }
 
-    config.forEach((character) => {
+    config.forEach((/** @type {object} */ character) => {
         newCharacterSubMenu.push({
             label: character.name,
             icon: nativeImage.createFromPath(path.join(__dirname, 'img/icons/custom.png')),
             type: 'normal',
             click: () => createShimejiWindow({
                 characterName: character.name,
+                author: character.author,
                 spriteImage: character.sprite_path,
                 blinkImage: character.blink_path,
                 isCustomCharacter: true,
@@ -1339,6 +1583,10 @@ function buildMenu(win) {
     ]);
 }
 
+/**
+ * Create a character based off options
+ * @param {object} options
+ */
 function createCharacterState(options) {
     return {
         chaseCursor: false,
@@ -1357,6 +1605,7 @@ function createCharacterState(options) {
         direction: 'right',
         speed: 1,
         characterName: options.characterId ? characterStates[options.characterId].characterName : options.characterName,
+        author: options.author || null,
         sprite: options.spriteImage,
         blink: options.blinkImage,
         custom: options.isCustomCharacter,
@@ -1385,6 +1634,12 @@ function createCharacterState(options) {
     };
 }
 
+/**
+ * Load a save from a label
+ * @param {string | null} saveLabel=null - Name of the save
+ * @param {boolean} append=false - If true, doesn't remove any ENAs on screen
+ * @returns {Promise<void>}
+ */
 async function loadSave(saveLabel = null, append = false) {
     let saves = await getSaves()
     favoriteCheck:
@@ -1426,6 +1681,10 @@ async function loadSave(saveLabel = null, append = false) {
         BrowserWindow.fromId(id).close()
 }
 
+/**
+ * Makes a new ENA window
+ * @param {object} options - Options for the ENA
+ */
 function createShimejiWindow(options) {
     let display = screen.getPrimaryDisplay();
     const centerX = Math.floor(display.bounds.x + (display.bounds.width - (options.frameWidth * currentScale)) / 2);
@@ -1434,7 +1693,7 @@ function createShimejiWindow(options) {
         height: (options.frameHeight * currentScale),
         minWidth: (options.frameWidth * currentScale),
         minHeight: (options.frameHeight * currentScale),
-        x: centerX,
+        x: centerX + Math.round(Math.random() * 20),
         y: 0,
         show: !currentHide,
         titleBarOverlay: null,
