@@ -38,6 +38,7 @@ let floorSnapDone = false;
 let floorSnapDistance = 25;
 let petStrength = 2;
 let petDecay = 5;
+let transparency = 1;
 let bounciness = 1
 let darkness = 50;
 let allowCustoms = false;
@@ -73,6 +74,7 @@ async function savePreferences() {
         floor_snap_dist: floorSnapDistance,
         pet_strength: petStrength,
         pet_decay: petDecay,
+        transparency: transparency,
         bounciness: bounciness
     };
     try {
@@ -102,6 +104,7 @@ async function loadPreferences() {
             if (typeof preferences.floor_snap_dist != "undefined") floorSnapDistance = preferences.floor_snap_dist
             if (typeof preferences.pet_strength != "undefined") petStrength = preferences.pet_strength
             if (typeof preferences.pet_decay != "undefined") petDecay = preferences.pet_decay
+            if (typeof preferences.transparency != "undefined") transparency = preferences.transparency
             if (typeof preferences.bounciness != "undefined") bounciness = preferences.bounciness
         } catch (err) {
             console.error("Error loading preferences: ", err);
@@ -231,8 +234,10 @@ ipcMain.on('channel1', (event, arg) => {
         if (characterStates[win.id].lastEvent) {
             characterStates[win.id].lastEvent.sender.send('setImagePath', path.join(__dirname, 'character'));
             characterStates[win.id].lastEvent.sender.send('setIsCustom', characterStates[win.id].custom);
+            characterStates[win.id].lastEvent.sender.send('setIsImported', characterStates[win.id].imported);
             characterStates[win.id].lastEvent.sender.send('setPetStrength', petStrength);
             characterStates[win.id].lastEvent.sender.send('setPetDecay', petDecay);
+            characterStates[win.id].lastEvent.sender.send('setTransparency', transparency);
             characterStates[win.id].lastEvent.sender.send('changeSprite', characterStates[win.id].sprite, characterStates[win.id].blink);
             characterStates[win.id].lastEvent.sender.send('changeScale', currentScale);
             characterStates[win.id].lastEvent.sender.send('changeAccessory', characterStates[win.id].accessory);
@@ -336,6 +341,7 @@ ipcMain.on('duplicate-character', (event, id) => {
         blinkImage: characterStates[id].blink,
         author: characterStates[id].author,
         isCustomCharacter: characterStates[id].custom,
+        isImportedCharacter: characterStates[id].imported,
         frameWidth: characterStates[id].width,
         frameHeight: characterStates[id].height,
         hueShift: characterStates[id].hueShift,
@@ -379,6 +385,7 @@ ipcMain.on("reload-preferences", e => {
             floorSnapDistance: floorSnapDistance,
             petStrength: petStrength,
             petDecay: petDecay,
+            transparency: transparency,
             bounciness: bounciness
         }
     })
@@ -422,7 +429,6 @@ ipcMain.on('get-pet-strength', (event) => {
 
 ipcMain.on('update-pet-decay', (event, val) => {
     if (petDecay == val) return
-    console.log("update d", petDecay, "=>", val)
     petDecay = val;
     for (const character in characterStates) {
         characterStates[character].lastEvent.sender.send('setPetDecay', val);
@@ -434,8 +440,23 @@ ipcMain.on('get-pet-decay', (event) => {
         characterStates[character].lastEvent.sender.send('setPetDecay', petDecay);
     }
     event.returnValue = petDecay;
-
 });
+
+ipcMain.on('update-transparency', (event, val) => {
+    if (transparency == val) return
+    transparency = val;
+    for (const character in characterStates) {
+        characterStates[character].lastEvent.sender.send('setTransparency', val);
+    }
+});
+
+ipcMain.on('get-transparency', (event) => {
+    for (const character in characterStates) {
+        characterStates[character].lastEvent.sender.send('setTransparency', transparency);
+    }
+    event.returnValue = transparency;
+});
+
 
 ipcMain.on('update-bounciness', (event, val) => {
     bounciness = val;
@@ -487,6 +508,7 @@ ipcMain.on('save-current-characters', (event, save) => {
                 spriteImage: character.sprite,
                 blinkImage: character.blink,
                 isCustomCharacter: character.custom,
+                isImportedCharacter: character.imported,
                 accessory: character.accessory,
                 primaryColor: character.primary,
                 secondaryColor: character.secondary,
@@ -654,23 +676,35 @@ function createTray() {
 }
 
 function updateTray() {
-    let config, newCharacterSubMenu = [
-        {
-            label: 'Ena',
-            icon: nativeImage.createFromPath(path.join(__dirname, 'img/icons/ena.png')),
-            type: 'normal',
-            click: () => createShimejiWindow({
-                characterName: 'Ena',
-                spriteImage: 'ena_default.png',
-                blinkImage: 'ena_blink.png',
-                isCustomCharacter: false,
-                primaryColor: '#2c5bf5',
-                secondaryColor: '#ffe308',
-                frameWidth: 36,
-                frameHeight: 52
-            })
-        }
-    ];
+
+    let config,
+        importsConfig,
+        newImportedCharacterSubMenu = [
+            { label: 'No one\'s here...', type: 'normal', enabled: false }
+        ],
+        newCharacterSubMenu = [
+            {
+                label: 'Imported characters',
+                type: 'submenu',
+                submenu: newImportedCharacterSubMenu
+            },
+            {
+                label: 'Ena',
+                icon: nativeImage.createFromPath(path.join(__dirname, 'img/icons/ena.png')),
+                type: 'normal',
+                click: () => createShimejiWindow({
+                    characterName: 'Ena',
+                    spriteImage: 'ena_default.png',
+                    blinkImage: 'ena_blink.png',
+                    isCustomCharacter: false,
+                    isImportedCharacter: false,
+                    primaryColor: '#2c5bf5',
+                    secondaryColor: '#ffe308',
+                    frameWidth: 36,
+                    frameHeight: 52
+                })
+            }
+        ];
 
     try {
         const configPath = path.join(__dirname, 'character', 'config.json');
@@ -678,6 +712,15 @@ function updateTray() {
     } catch (err) {
         console.error('Error reading config file:', err);
     }
+
+    try {
+        const importPath = path.join(__dirname, '../imports/characters', 'config.json');
+        importsConfig = JSON.parse(fs.readFileSync(importPath, 'utf8'));
+        if (Object.keys(importsConfig).length) newImportedCharacterSubMenu = []
+    } catch (err) {
+        console.error('Error reading imports config file:', err);
+    }
+
 
     config.forEach((character) => {
         newCharacterSubMenu.push({
@@ -690,6 +733,7 @@ function updateTray() {
                 spriteImage: character.sprite_path,
                 blinkImage: character.blink_path,
                 isCustomCharacter: true,
+                isImportedCharacter: false,
                 primaryColor: character.primary_color ?? undefined,
                 secondaryColor: character.secondary_color ?? undefined,
                 hueShift: character.hueShift ?? [0, 0, 0],
@@ -700,6 +744,30 @@ function updateTray() {
         });
     });
 
+    importsConfig.forEach((character, i) => {
+        let icon = nativeImage.createFromPath(path.join(__dirname, character.icon ? '../imports/characters/' + character.icon : 'img/icons/custom.png'))
+        icon = icon.resize({ width: 16, height: 16, quality: "best" })
+        newImportedCharacterSubMenu.push({
+            label: character.name,
+            icon: icon,
+            type: 'normal',
+            click: () => createShimejiWindow({
+                characterName: character.name,
+                author: character.author,
+                spriteImage: character.sprite_path,
+                blinkImage: character.blink_path,
+                isCustomCharacter: true,
+                isImportedCharacter: true,
+                primaryColor: character.primary_color ?? undefined,
+                secondaryColor: character.secondary_color ?? undefined,
+                hueShift: character.hueShift ?? [0, 0, 0],
+                darknessOffset: character.darknessOffset ?? [0.85, 1.45, 1.60],
+                frameWidth: character.width ?? 36,
+                frameHeight: character.height ?? 52
+            })
+        });
+        newCharacterSubMenu[0].submenu = newImportedCharacterSubMenu
+    });
     contextMenu = null;
     contextMenu = Menu.buildFromTemplate([
         {
@@ -1127,7 +1195,7 @@ function setCollision(win) {
                 win.setPosition(x, newDispY - winHeight);
                 floorSnapDone = true
             }
-            else{
+            else {
                 characterStates[win.id].v_speed_x = Math.abs(characterStates[win.id].v_speed_x) * (characterStates[win.id].isBouncing || !characterStates[win.id].isFalling || bounciness);
                 characterStates[win.id].direction = 'right';
                 characterStates[win.id].dx = ((characterStates[win.id].isBouncing || !characterStates[win.id].isFalling) * characterStates[win.id].scale * characterStates[win.id].speed * (!characterStates[win.id].isFalling || bounciness));
@@ -1147,7 +1215,7 @@ function setCollision(win) {
             characterStates[win.id].v_speed_y = 0;
             characterStates[win.id].v_speed_x = 0;
 
-            win.setPosition(Math.round((characterStates[win.id].lastRightWall-characterStates[win.id].lastLeftWall) / 2 + characterStates[win.id].lastLeftWall), characterStates[win.id].lastFloorY)
+            win.setPosition(Math.round((characterStates[win.id].lastRightWall - characterStates[win.id].lastLeftWall) / 2 + characterStates[win.id].lastLeftWall), characterStates[win.id].lastFloorY)
             return;
         }
 
@@ -1273,27 +1341,48 @@ function buildMenu(win) {
     if (win == undefined) { return; }
     if (characterStates[win.id] === undefined) { return; }
 
-    let config, newCharacterSubMenu = [
-        {
-            label: 'Ena',
-            icon: nativeImage.createFromPath(path.join(__dirname, 'img/icons/ena.png')),
-            type: 'normal',
-            click: () => createShimejiWindow({
-                characterName: 'Ena',
-                spriteImage: 'ena_default.png',
-                blinkImage: 'ena_blink.png',
-                isCustomCharacter: false,
-                frameWidth: 36,
-                frameHeight: 52,
-            })
-        }
-    ];
+    let config,
+        importsConfig,
+        newImportedCharacterSubMenu = [
+            { label: 'No one\'s here...', type: 'normal', enabled: false }
+        ],
+        newCharacterSubMenu = [
+            {
+                label: 'Imported characters',
+                type: 'submenu',
+                submenu: newImportedCharacterSubMenu
+            },
+            {
+                label: 'Ena',
+                icon: nativeImage.createFromPath(path.join(__dirname, 'img/icons/ena.png')),
+                type: 'normal',
+                click: () => createShimejiWindow({
+                    characterName: 'Ena',
+                    spriteImage: 'ena_default.png',
+                    blinkImage: 'ena_blink.png',
+                    isCustomCharacter: false,
+                    isImportedCharacter: false,
+                    primaryColor: '#2c5bf5',
+                    secondaryColor: '#ffe308',
+                    frameWidth: 36,
+                    frameHeight: 52
+                })
+            }
+        ];
 
     try {
         const configPath = path.join(__dirname, 'character', 'config.json');
         config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     } catch (err) {
         console.error('Error reading config file:', err);
+    }
+
+    try {
+        const importPath = path.join(__dirname, '../imports/characters', 'config.json');
+        importsConfig = JSON.parse(fs.readFileSync(importPath, 'utf8'));
+        if (Object.keys(importsConfig).length) newImportedCharacterSubMenu = []
+    } catch (err) {
+        console.error('Error reading imports config file:', err);
     }
 
     config.forEach((/** @type {object} */ character) => {
@@ -1307,6 +1396,7 @@ function buildMenu(win) {
                 spriteImage: character.sprite_path,
                 blinkImage: character.blink_path,
                 isCustomCharacter: true,
+                isImportedCharacter: false,
                 primaryColor: character.primary_color ?? undefined,
                 secondaryColor: character.secondary_color ?? undefined,
                 hueShift: character.hueShift ?? [0, 0, 0],
@@ -1316,6 +1406,32 @@ function buildMenu(win) {
             })
         });
     });
+
+    importsConfig.forEach((character, i) => {
+        let icon = nativeImage.createFromPath(path.join(__dirname, character.icon ? '../imports/characters/' + character.icon : 'img/icons/custom.png'))
+        icon = icon.resize({ width: 16, height: 16, quality: "best" })
+        newImportedCharacterSubMenu.push({
+            label: character.name,
+            icon: icon,
+            type: 'normal',
+            click: () => createShimejiWindow({
+                characterName: character.name,
+                author: character.author,
+                spriteImage: character.sprite_path,
+                blinkImage: character.blink_path,
+                isCustomCharacter: true,
+                isImportedCharacter: true,
+                primaryColor: character.primary_color ?? undefined,
+                secondaryColor: character.secondary_color ?? undefined,
+                hueShift: character.hueShift ?? [0, 0, 0],
+                darknessOffset: character.darknessOffset ?? [0.85, 1.45, 1.60],
+                frameWidth: character.width ?? 36,
+                frameHeight: character.height ?? 52
+            })
+        });
+        newCharacterSubMenu[0].submenu = newImportedCharacterSubMenu
+    });
+
 
     characterStates[win.id].menu = Menu.buildFromTemplate([
         {
@@ -1332,6 +1448,7 @@ function buildMenu(win) {
                     spriteImage: characterStates[win.id].sprite,
                     blinkImage: characterStates[win.id].blink,
                     isCustomCharacter: characterStates[win.id].custom,
+                    isImportedCharacter: characterStates[win.id].imported,
                     frameWidth: characterStates[win.id].width,
                     frameHeight: characterStates[win.id].height,
                     hueShift: characterStates[win.id].hueShift,
@@ -1609,6 +1726,7 @@ function createCharacterState(options) {
         sprite: options.spriteImage,
         blink: options.blinkImage,
         custom: options.isCustomCharacter,
+        imported: options.isImportedCharacter,
         isDragging: false,
         isReleased: true,
         isFalling: true,
@@ -1659,6 +1777,7 @@ async function loadSave(saveLabel = null, append = false) {
             spriteImage: 'ena_default.png',
             blinkImage: 'ena_blink.png',
             isCustomCharacter: false,
+            isImportedCharacter: false,
             primaryColor: '#2c5bf5',
             secondaryColor: '#ffe308',
             frameWidth: 36,
@@ -1725,7 +1844,7 @@ function createShimejiWindow(options) {
     });
 
     win.webContents.on('before-input-event', (e, input) => {
-        if ((input.control && input.shift && input.key === 'I') && !devMode) {
+        if ((input.control && ((input.shift && input.key === 'I') || input.key === 'r')) && !devMode) {
             e.preventDefault(); // Disabled DevTools
         }
     });

@@ -39,12 +39,14 @@
         let options = {};
         let imgPath = null;
         let isCustom = false;
+        let isImport = false;
         let wasDragging = false;
         let wasPetting = false;
         let currentDrag = false;
         let petAmount = 0;
         let petDecay = 5;
         let petStrength = 2;
+        let transparency = 1
         let deltaStart = performance.now();
         let deltaEnd = performance.now();
         let delta = deltaEnd - deltaStart
@@ -169,6 +171,10 @@
             isCustom = bool;
         });
 
+        window.api.receive('setIsImported', (bool) => {
+            isImport = bool;
+        });
+
         window.api.receive('setPetStrength', (num) => {
             petStrength = num;
             // When mouse is moved (assuming petting is allowed)
@@ -179,6 +185,11 @@
 
         window.api.receive('setPetDecay', (num) => {
             petDecay = num;
+        });
+
+        window.api.receive('setTransparency', (num) => {
+            transparency = num;
+            document.body.style.opacity = transparency
         });
 
         window.api.receive('changeScale', (scale, size) => {
@@ -212,8 +223,8 @@
         window.api.receive('changeSprite', (sprite, blink) => {
             const name = sprite.replace(/(^img\/character\/)|(_default\.png$)/g, '').toLowerCase();
             let spritesheet = {
-                character: (isCustom ? imgPath + '\\' + sprite : 'img/character/' + sprite),
-                eyes: (isCustom ? imgPath + '\\' + blink : 'img/character/' + blink),
+                character: (isCustom ? imgPath + (isImport ? "/../../imports/characters" : "") + '\\' + sprite : 'img/character/' + sprite),
+                eyes: (isCustom ? imgPath + (isImport ? "/../../imports/characters" : "") + '\\' + blink : 'img/character/' + blink),
                 ena: 'img/accessory/Ena_accessory.png',
                 bbq_ena: 'img/accessory/BBQEna_accessory.png',
                 shepherd: 'img/accessory/Shepherd_accessory.png',
@@ -320,6 +331,7 @@
                 window.api.send('direction', direction);
             }).catch((error) => {
                 console.error(`Error al cargar las imágenes: ${error}`);
+                document.body.style.background = "#F00"
             });
         });
     </script>

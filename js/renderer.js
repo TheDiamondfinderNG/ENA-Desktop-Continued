@@ -335,8 +335,8 @@ characters.addEventListener('change', (event) => {
         characterPreview.setRole(characterStates.author ? "^"+(characterStates.author.color || 1)+"Made by:"+(characterStates.author.name || characterStates.author ): "");
         const imgPath = path.join(__dirname, 'character');
         let sprites = {
-            character: (characterStates.custom ? imgPath + '\\' + characterStates.sprite : 'img/character/' + characterStates.sprite),
-            eyes: (characterStates.custom ? imgPath + '\\' + characterStates.blink : 'img/character/' + characterStates.blink),
+            character: ((characterStates.custom ? (characterStates.imported ? "../imports/characters/" : imgPath + '\\') : "") + characterStates.sprite),
+            eyes: ((characterStates.custom ? (characterStates.imported ? "../imports/characters/" : imgPath + '\\') : "") + characterStates.blink),
             ena: 'img/accessory/Ena_accessory.png',
             bbq_ena: 'img/accessory/BBQEna_accessory.png',
             shepherd: 'img/accessory/Shepherd_accessory.png',

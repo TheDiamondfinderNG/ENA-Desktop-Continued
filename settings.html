@@ -264,9 +264,118 @@
 																		</div>
 																	</div>
 																</div>
+																<div class="row form-group">
+																	<label class="col-sm-4 col-form-label"
+																		title="How transparent the ENAs are">
+																		Opacity
+																	</label>
+																	<div class="col-sm-8">
+																		<input type="number" pattern="[0-9]*"
+																			value="100" maxlength="3"
+																			class="form-control form-control-sm ms-1 ng-pristine ng-valid ng-touched"
+																			oninput="transparencyrange.value=value"
+																			id="transparencynumber" step="1" min="0"
+																			max="Infinity">
+																		<slider-bar>
+																			<input class="flex-grow-1" type="range"
+																				min="0" max="100" value="100"
+																				oninput="transparencynumber.value=value"
+																				id="transparencyrange"
+																				style="background-size: 0% 100%;">
+																		</slider-bar><br />
+																		<div class="warning" style="display: none;">
+																			&nbsp;WARNING: They are invisible. </div>
+																	</div>
+																</div>
 															</div>
-															<h1 style="text-align: center; padding: 1em;">Still a WIP,
-																more to come</h1>
+															<form style="text-align: center;">
+																<label for="file"
+																	style="cursor: pointer;display: block;background: #121212;border: #0D0D0D dashed 6px;border-radius: 1.5em;padding: 2rem;margin: 1rem 0.5em;"><fa-icon
+																		class="ng-fa-icon"></fa-icon>
+																	<h3
+																		style="display: flex;justify-content: center;flex-direction: row;align-items: center;">
+																		<svg role="img" focusable="false"
+																			data-prefix="fas"
+																			data-icon="arrow-up-from-bracket"
+																			class="svg-inline--fa fa-arrow-up-from-bracket fa-fw"
+																			xmlns="http://www.w3.org/2000/svg"
+																			viewBox="0 0 448 512"
+																			style="height: auto;/* position: relative; */display: inline-block;margin: 0 0.5em;/* top: -10px; */">
+																			<path fill="currentColor"
+																				d="M246.6 9.4c-12.5-12.5-32.8-12.5-45.3 0l-128 128c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 109.3 192 320c0 17.7 14.3 32 32 32s32-14.3 32-32l0-210.7 73.4 73.4c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3l-128-128zM64 352c0-17.7-14.3-32-32-32S0 334.3 0 352l0 64c0 53 43 96 96 96l256 0c53 0 96-43 96-96l0-64c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 64c0 17.7-14.3 32-32 32L96 448c-17.7 0-32-14.3-32-32l0-64z"
+																				</path>
+																		</svg><span>
+																			&nbsp;Upload or drop ENAs / Accessories
+																		</span>
+																	</h3>
+																	<h4 style="color: #555">.zip</h4>
+																</label>
+																<input id="file" name="file" type="file" multiple
+																	accept="zip" style="display: none;">
+																<a target="_blank" class="custom-link"
+																	href="https://gitlab.com/TheDiamondfinderNG/ena-desktop-continued/-/wikis/creating-characters">How
+																	to make a custom character</a>
+															</form>
+															<div>
+																<div id="imported-characters">
+																	<div class="btn btn-dark import-slot">
+																		<span class="label">Stupid ENA</span>
+																		<span class="btn-group">
+																			<button aria-label="Download"
+																				class="btn btn-info download-button"
+																				title="Downloads a ENA zip for easy sharing">
+																				<fa-icon class="ng-fa-icon">
+																					<svg role="img" aria-hidden="true"
+																						focusable="false"
+																						data-prefix="fas"
+																						data-icon="arrow-down"
+																						class="svg-inline--fa fa-arrow-down fa-fw"
+																						xmlns="http://www.w3.org/2000/svg"
+																						viewBox="0 0 384 512">
+																						<path fill="currentColor"
+																							d="M169.4 502.6c12.5 12.5 32.8 12.5 45.3 0l160-160c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L224 402.7 224 32c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 370.7-105.4-105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l160 160z">
+																						</path>
+																					</svg>
+																				</fa-icon>
+																			</button>
+																			<button aria-label="Open Location"
+																				class="btn btn-info open-button"
+																				title="Open sprite in directory">
+																				<fa-icon class="ng-fa-icon">
+																					<svg role="img" aria-hidden="true"
+																						focusable="false"
+																						data-prefix="fas"
+																						data-icon="arrow-down"
+																						class="svg-inline--fa fa-arrow-down fa-fw"
+																						xmlns="http://www.w3.org/2000/svg"
+																						viewBox="0 0 512 512">
+																						<path fill="currentColor"
+																							d="M64 448l384 0c35.3 0 64-28.7 64-64l0-240c0-35.3-28.7-64-64-64L298.7 80c-6.9 0-13.7-2.2-19.2-6.4L241.1 44.8C230 36.5 216.5 32 202.7 32L64 32C28.7 32 0 60.7 0 96L0 384c0 35.3 28.7 64 64 64z">
+																						</path>
+																					</svg>
+																				</fa-icon>
+																			</button>
+																			<button aria-label="Delete ENA"
+																				class="btn btn-danger remove-button"
+																				title="Deletes the save. Shift+Click to skip confirmation">
+																				<fa-icon class="ng-fa-icon">
+																					<svg role="img" aria-hidden="true"
+																						focusable="false"
+																						data-prefix="fas"
+																						data-icon="trash"
+																						class="svg-inline--fa fa-trash fa-fw"
+																						xmlns="http://www.w3.org/2000/svg"
+																						viewBox="0 0 448 512">
+																						<path fill="currentColor"
+																							d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3 0 46.3-19.7 47.9-45L416 128z">
+																						</path>
+																					</svg>
+																				</fa-icon>
+																			</button>
+																		</span>
+																	</div>
+																</div>
+															</div>
 														</main>
 														<div class="text-center text-muted">
 															<div class="tinyface"></div>
@@ -308,12 +417,18 @@
 	<script src="js/ponyUtils.js"></script>
 	<script src="js/fixToTop.js"></script>
 	<script>
-		const monitorLock = document.querySelector("#monitor-lock")
-		const floorLock = document.querySelector("#floor-lock")
-		const floorLockDist = document.querySelector("#floor-lock-dist")
-		const petStrength = document.querySelector("#strengthnumber")
-		const petDecay = document.querySelector("#decaynumber")
-		const bounciness = document.querySelector("#bouncinessnumber")
+		const JSzip = require('jszip');
+		const fs = require('fs');
+		const path = require("path")
+		const monitorLock = document.querySelector("#monitor-lock"),
+			floorLock = document.querySelector("#floor-lock"),
+			floorLockDist = document.querySelector("#floor-lock-dist"),
+			petStrength = document.querySelector("#strengthnumber"),
+			petDecay = document.querySelector("#decaynumber"),
+			bounciness = document.querySelector("#bouncinessnumber"),
+			transparency = document.querySelector("#transparencynumber"),
+			fileUpload = document.querySelector("#file"),
+			importBox = fileUpload.labels[0]
 		function initValues() {
 			let settings = ipcRenderer.sendSync("reload-preferences")
 			monitorLock.checked = ipcRenderer.sendSync("get-monitor-lock")
@@ -322,13 +437,16 @@
 			petStrength.value = ipcRenderer.sendSync("get-pet-strength") * 10
 			petDecay.value = ipcRenderer.sendSync("get-pet-decay") * 10
 			bounciness.value = ipcRenderer.sendSync("get-bounciness") * 100
+			transparency.value = ipcRenderer.sendSync("get-transparency") * 100
 			document.querySelector("#strengthrange").value = petStrength.value
 			document.querySelector("#decayrange").value = petDecay.value
 			document.querySelector("#bouncinessrange").value = bounciness.value
+			document.querySelector("#transparencyrange").value = transparency.value
 			document.querySelector("#monitor").style.display = ipcRenderer.sendSync("get-displays").length > 1 ? "initial" : "none"
 			document.querySelector("#pet-decay-wrapper").style.display = petStrength.value > 0 ? "contents" : "none"
 			petDecay.parentElement.querySelector(".warning").style.display = petDecay.value > 0 ? "none" : "initial"
 			bounciness.parentElement.querySelector(".warning").style.display = bounciness.value > 100 ? "initial" : "none"
+			transparency.parentElement.querySelector(".warning").style.display = transparency.value > 0 ? "none" : "initial"
 			document.querySelector("#floor-lock-dist-wrapper").style.display = floorLock.value == 1 ? "contents" : "none"
 
 		}
@@ -340,6 +458,7 @@
 			ipcRenderer.send("update-pet-strength", petStrength.value / 10)
 			ipcRenderer.send("update-pet-decay", petDecay.value / 10)
 			ipcRenderer.send("update-bounciness", bounciness.value / 100)
+			ipcRenderer.send("update-transparency", transparency.value / 100)
 		}
 
 		function saveValues() {
@@ -373,13 +492,162 @@
 		document.querySelector("#bouncinessrange").onchange = () => {
 			bounciness.parentElement.querySelector(".warning").style.display = bounciness.value > 100 ? "initial" : "none"
 		}
-		document.querySelector("main").onchange = () => {
+		transparency.onchange = () => {
+			transparency.parentElement.querySelector(".warning").style.display = transparency.value == 0 ? "initial" : "none"
+		}
+		document.querySelector("#transparencyrange").onchange = () => {
+			transparency.parentElement.querySelector(".warning").style.display = transparency.value == 0 ? "initial" : "none"
+		}
+		document.querySelector("main").onchange = (e) => {
+			if (e.target.matches("form input")) return
 			applyValues()
 			document.querySelector("#confirmation").classList.add("active")
 		}
 		initValues()
 
 		document.querySelector("main").style.opacity = "1"
+
+		window.addEventListener("dragover", (e) => {
+			const fileItems = [...e.dataTransfer.items].filter(
+				(item) => item.kind === "file",
+			);
+			if (fileItems.length > 0) {
+				e.preventDefault();
+				if (!dropZone.contains(e.target)) {
+					e.dataTransfer.dropEffect = "none";
+				}
+			}
+		});
+
+		window.addEventListener("drop", (e) => {
+			if ([...e.dataTransfer.items].some((item) => item.kind === "file")) {
+				e.preventDefault();
+			}
+		});
+
+		importBox.addEventListener("dragover", (e) => {
+			const fileItems = [...e.dataTransfer.items].filter(
+				(item) => item.kind === "file",
+			);
+			if (fileItems.length == 1) {
+				e.preventDefault();
+				if (fileItems.some((item) => item.type == "application/x-zip-compressed")) {
+					e.dataTransfer.effectAllowed = "copyMove";
+					e.dataTransfer.dropEffect = "copy";
+				} else {
+					e.dataTransfer.effectAllowed = "none";
+					e.dataTransfer.dropEffect = "none";
+				}
+			}
+		});
+
+		importBox.addEventListener("drop", dropHandler);
+
+		fileUpload.addEventListener("input", () => {
+			uploadHandler(fileUpload.files)
+			fileUpload.value = ""
+		})
+
+		function checkDupes(chars, config) {
+			let failed = false, toRemove = null
+			for (let character in chars) {
+				if (chars[character].name == config.name) {
+					let sourceAuthor = chars[character].author || "uncredited"
+					let newAuthor = config.author || "uncredited"
+					if ((sourceAuthor.name || sourceAuthor) == (newAuthor.name || newAuthor)) {
+						if (!confirm(`It looks like you're trying to import an already existing character (${chars[character].name} by ${(sourceAuthor.name || sourceAuthor)}), would you like to continue? (This will override the current copy)`)) {
+							console.error("User canceled import")
+							failed = true
+							break
+						}
+						toRemove = character
+					}
+					else if (!confirm(`It looks like you're trying to import an already existing character (${chars[character].name}) with a different author (${(sourceAuthor.name || sourceAuthor)} instead of ${(config.author.name || config.author)}), would you like to continue? (the character will include this authors name at the end)`)) {
+						console.error("User canceled import")
+						failed = true
+						break
+					} else {
+						config.name += ` (${(newAuthor.name || newAuthor)})`
+					}
+				}
+			}
+			return { value: config, continue: !failed, toRemove: toRemove }
+		}
+
+		function dropHandler(e) {
+			e.preventDefault();
+			const files = [...e.dataTransfer.items]
+			let fileList = []
+			for (let file of files)
+				fileList.push(file.getAsFile())
+			uploadHandler(fileList)
+		}
+
+		function uploadHandler(files) {
+			const lastUploaded = importBox.querySelector("h4")
+			let fileNames = []
+			for (let file of files) {
+				fileNames.push(file.name)
+				zipImport(file.path)
+			}
+			lastUploaded.innerText = "Last Uploaded: " + fileNames.join(", ")
+		}
+
+		function zipImport(dir) {
+			fs.readFile(dir, function (err, data) {
+				if (err) throw err;
+				JSzip.loadAsync(data).then(async function (zip) {
+					let zipFiles = zip.files
+					if (zipFiles["config.json"]) {
+						let currentConfig = fs.existsSync("../imports/characters/config.json") ? JSON.parse(fs.readFileSync("../imports/characters/config.json"), {}) : []
+						let fileConfig = JSON.parse(Buffer.from(await (await zipFiles["config.json"].async("blob")).arrayBuffer()).toString())
+						// Check if config is an array
+						if (typeof fileConfig.length != "undefined") {
+							for (let character of fileConfig) {
+								let result = checkDupes(currentConfig, character)
+								if (!result.continue) {
+									console.log(character)
+									delete zipFiles[character["sprite_path"]]
+									delete zipFiles[character["blink_path"]]
+									continue
+								}
+								if (result.toRemove != null)
+									currentConfig.splice(result.toRemove, 1)
+								character = result.value
+								currentConfig.push(character)
+							}
+							fs.writeFileSync("../imports/characters/config.json", JSON.stringify(currentConfig))
+						} else {
+							let result = checkDupes(currentConfig, fileConfig)
+							if (!result.continue) return
+							if (result.toRemove != null)
+								currentConfig.splice(result.toRemove, 1)
+							fileConfig = result.value
+							currentConfig.push(fileConfig)
+							fs.writeFileSync("../imports/characters/config.json", JSON.stringify(currentConfig))
+						}
+						delete zipFiles["config.json"]
+					} else {
+						alert("ERROR: The file is missing a config.json")
+						return
+					}
+					for (let file in zipFiles) {
+						zipFiles[file].async("blob")
+							.then(x => x.arrayBuffer())
+							.then(async fileBuffer => {
+								let filePath = path.join("/../imports/characters/", file)
+								let destPath = path.dirname(filePath)
+								// console.log(destPath)
+								fs.mkdir(destPath, { recursive: true }, (err) => { if (err) throw err; fs.writeFileSync(filePath, Buffer.from(fileBuffer)) })
+							})
+					}
+				});
+			});
+		}
+
+
+		let spriteLocation = path.join(__dirname, "../imports/characters/")
+		shell.showItemInFolder(spriteLocation)
 	</script>
 </body>
 

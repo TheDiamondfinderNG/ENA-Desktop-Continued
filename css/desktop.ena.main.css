@@ -250,9 +250,11 @@ menu-bar {
 
 .desktop-ena .split-view-view.window-container {
     transition: --var1 .35s ease;
-    /* All this does is break position: fixed */
-    /* transform: translate3d(0, 0, 0); */
-    overflow: auto
+    transform: translate3d(0, 0, 0);
+    overflow: auto;
+    &:has(.settings) {
+        transform: none;
+    }
 }
 
 .desktop-ena .split-view-view.window-container:hover {
@@ -1032,6 +1034,25 @@ svg:not(:root).svg-inline--fa {
     visibility: hidden;
 }
 
+.import-slot {
+    font-weight: 400;
+    font-size: 1.5rem;
+    margin: 1rem;
+    padding: 0.75rem 1.5rem !important;
+    border-radius: 0.5rem !important;
+    display: flex;
+    transition: scale 0.4s;
+}
+
+.import-slot .btn-group {
+    margin-left: auto;
+    flex-direction: column;
+    .btn {
+        border-radius: 3px !important;
+        margin: 3px 0 !important;
+    }
+}
+
 #new-save {
     text-align: center;
     border-style: dashed !important;
@@ -1062,7 +1083,11 @@ svg:not(:root).svg-inline--fa {
 
 #confirmation {
     position: fixed;
-    bottom: -10rem;
+    visibility: hidden;
+    overflow: hidden;
+    bottom: -1rem;
+    height: 0;
+    /* padding: 0 !important; */
     left: 0;
     right: 0;
     margin: 0 auto;
@@ -1099,6 +1124,8 @@ svg:not(:root).svg-inline--fa {
 
 #confirmation.active {
     bottom: 3rem;
+    visibility: visible;
+    height: initial;
 }
 
 .input-group>.input-group-append>div>.btn {
