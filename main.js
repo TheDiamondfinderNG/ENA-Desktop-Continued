@@ -1,7 +1,7 @@
 const { app, screen, ipcMain, dialog, shell, Menu, Tray, nativeImage, BrowserWindow } = require('electron');
 const { setActions } = require('./actions');
 const { setPhysics } = require('./physics');
-const { getRandomNumber } = require('./utils');
+const { getRandomNumber, getRandomInteger } = require('./utils');
 const { characterStates } = require('./States.js');
 const activeWin = require('active-win');
 const path = require('path');
@@ -149,8 +149,13 @@ async function getSaves() {
                                 buttons: ["Yes", "No"]
                             })
                             .then(dialogResponse => {
-                                if (!dialogResponse.response)
-                                    fs.promises.writeFile(savePath, data)
+                                if (!dialogResponse.response){
+                                    fs.promises.writeFile(savePath, data).then(
+                                        ()=>{
+                                            fs.promises.rm(backupPath)
+                                        }
+                                    )
+                                }
                                 if (settings)
                                     settings.reload()
                             })
@@ -361,7 +366,6 @@ ipcMain.on('get-background', (event) => {
 
 ipcMain.on('update-scale', (event, scale) => {
     settingScale = scale;
-    savePreferences();
 });
 
 ipcMain.on('get-scale', (event) => {
@@ -470,7 +474,6 @@ ipcMain.on('save-settings', savePreferences)
 
 ipcMain.on('update-darkness', (event, number) => {
     darkness = number;
-    savePreferences();
 });
 
 ipcMain.on('get-darkness', (event) => {
@@ -479,7 +482,6 @@ ipcMain.on('get-darkness', (event) => {
 
 ipcMain.on('update-allow-customs', (event, bool) => {
     allowCustoms = bool;
-    savePreferences();
 });
 
 ipcMain.on('get-allow-customs', (event) => {
@@ -525,9 +527,19 @@ ipcMain.on('save-current-characters', (event, save) => {
 
     })
 });
+
 ipcMain.on('load-save', (event, save, append = false) => {
     loadSave(save, append)
 });
+
+ipcMain.on("update-menus", ()=>{
+    updateTray()
+    windows.forEach(win => {
+        characterStates[win.id].menu = null;
+        buildMenu(win);
+    });
+})
+
 
 ipcMain.on('requestChangeColor', (event, id) => {
     const win = BrowserWindow.fromId(id);
@@ -715,6 +727,10 @@ function updateTray() {
 
     try {
         const importPath = path.join(__dirname, '../imports/characters', 'config.json');
+        if(!fs.existsSync(importPath)){
+            fs.mkdirSync("../imports/characters", {recursive: true})
+            fs.writeFileSync("../imports/characters/config.json", "[]")
+        }
         importsConfig = JSON.parse(fs.readFileSync(importPath, 'utf8'));
         if (Object.keys(importsConfig).length) newImportedCharacterSubMenu = []
     } catch (err) {
@@ -1812,7 +1828,7 @@ function createShimejiWindow(options) {
         height: (options.frameHeight * currentScale),
         minWidth: (options.frameWidth * currentScale),
         minHeight: (options.frameHeight * currentScale),
-        x: centerX + Math.round(Math.random() * 20),
+        x: centerX + getRandomInteger(-100, 100),
         y: 0,
         show: !currentHide,
         titleBarOverlay: null,

@@ -311,69 +311,49 @@
 																	<h4 style="color: #555">.zip</h4>
 																</label>
 																<input id="file" name="file" type="file" multiple
-																	accept="zip" style="display: none;">
+																	accept=".zip" style="display: none;">
 																<a target="_blank" class="custom-link"
 																	href="https://gitlab.com/TheDiamondfinderNG/ena-desktop-continued/-/wikis/creating-characters">How
 																	to make a custom character</a>
+																<a target="_blank" class="custom-link" style="border: solid #555; border-width: 0px 1px; padding: 0 0.5em; margin: 0 0.5em"
+																	href="https://gitlab.com/TheDiamondfinderNG/ena-desktop-continued/-/wikis/legacy-transfer">How
+																	to port legacy custom characters</a>
+																<a target="_blank" class="custom-link"
+																	href="https://drive.proton.me/urls/H6K1QC3TTM#aBbGz77LEeEj">Public
+																	Custom Character library</a>
 															</form>
-															<div>
-																<div id="imported-characters">
-																	<div class="btn btn-dark import-slot">
-																		<span class="label">Stupid ENA</span>
-																		<span class="btn-group">
-																			<button aria-label="Download"
-																				class="btn btn-info download-button"
-																				title="Downloads a ENA zip for easy sharing">
-																				<fa-icon class="ng-fa-icon">
-																					<svg role="img" aria-hidden="true"
-																						focusable="false"
-																						data-prefix="fas"
-																						data-icon="arrow-down"
-																						class="svg-inline--fa fa-arrow-down fa-fw"
-																						xmlns="http://www.w3.org/2000/svg"
-																						viewBox="0 0 384 512">
-																						<path fill="currentColor"
-																							d="M169.4 502.6c12.5 12.5 32.8 12.5 45.3 0l160-160c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L224 402.7 224 32c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 370.7-105.4-105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l160 160z">
-																						</path>
-																					</svg>
-																				</fa-icon>
-																			</button>
-																			<button aria-label="Open Location"
-																				class="btn btn-info open-button"
-																				title="Open sprite in directory">
-																				<fa-icon class="ng-fa-icon">
-																					<svg role="img" aria-hidden="true"
-																						focusable="false"
-																						data-prefix="fas"
-																						data-icon="arrow-down"
-																						class="svg-inline--fa fa-arrow-down fa-fw"
-																						xmlns="http://www.w3.org/2000/svg"
-																						viewBox="0 0 512 512">
-																						<path fill="currentColor"
-																							d="M64 448l384 0c35.3 0 64-28.7 64-64l0-240c0-35.3-28.7-64-64-64L298.7 80c-6.9 0-13.7-2.2-19.2-6.4L241.1 44.8C230 36.5 216.5 32 202.7 32L64 32C28.7 32 0 60.7 0 96L0 384c0 35.3 28.7 64 64 64z">
-																						</path>
-																					</svg>
-																				</fa-icon>
-																			</button>
-																			<button aria-label="Delete ENA"
-																				class="btn btn-danger remove-button"
-																				title="Deletes the save. Shift+Click to skip confirmation">
-																				<fa-icon class="ng-fa-icon">
-																					<svg role="img" aria-hidden="true"
-																						focusable="false"
-																						data-prefix="fas"
-																						data-icon="trash"
-																						class="svg-inline--fa fa-trash fa-fw"
-																						xmlns="http://www.w3.org/2000/svg"
-																						viewBox="0 0 448 512">
-																						<path fill="currentColor"
-																							d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3 0 46.3-19.7 47.9-45L416 128z">
-																						</path>
-																					</svg>
-																				</fa-icon>
-																			</button>
-																		</span>
-																	</div>
+															<div id="import-tabs">
+																<input type="text" id="search" class="btn-dark"
+																	placeholder="Search"
+																	oninput="filterCustoms(search.value)">
+																<span class="tab selected-tab" id="character-tab"
+																	onclick="
+																	document.querySelector('.selected-tab').classList.remove('selected-tab')
+																	document.querySelector('#character-tab').classList.add('selected-tab')
+																	">Characters</span>
+																<span class="tab" id="accessory-tab" onclick="
+																	document.querySelector('.selected-tab').classList.remove('selected-tab')
+																	document.querySelector('#accessory-tab').classList.add('selected-tab')
+																	">Accessories</span>
+
+																<div class="tab-contents" id="imported-characters">
+																	<span class="btn-group">
+																		<button class="btn btn-lg btn-default btn-dark"
+																			onclick="updateSlots(); ipcRenderer.send('update-menus')">
+																			Reload Config
+																		</button>
+																		<button class="btn btn-lg btn-default btn-dark"
+																			onclick="zipTemplateExport()">Download
+																			Template</button>
+																		<button class="btn btn-lg btn-default btn-dark"
+																			onclick="shell.openPath(spriteLocation+'config.json')">Open
+																			character config</button>
+																	</span>
+
+																	<h1 id="no-ena-message"></h1>
+																</div>
+																<div class="tab-contents" id="imported-accessories">
+																	<h1>WIP ¯\_(ツ)_/¯</h1>
 																</div>
 															</div>
 														</main>
@@ -381,8 +361,7 @@
 															<div class="tinyface"></div>
 														</div>
 														<footer class="text-muted text-nowrap">
-															<div class="app-version">version <b class="me-2">v1.1.0
-																	PRERELEASE
+															<div class="app-version">version <b class="me-2">v1.1.0 PRERELEASE (d94807f)
 																	<strong>(Community Continued)</strong></b></div>
 															<div class="text-end">
 																<div class="d-flex flex-wrap">
@@ -413,7 +392,7 @@
 	<script src="js/color-picker.js"></script>
 	<script src="js/dropdown.js"></script>
 	<script src="image-utils.js"></script>
-	<script src="js/fontUtils.js"></script>
+	<script src="animate-utils.js"></script>
 	<script src="js/ponyUtils.js"></script>
 	<script src="js/fixToTop.js"></script>
 	<script>
@@ -448,7 +427,6 @@
 			bounciness.parentElement.querySelector(".warning").style.display = bounciness.value > 100 ? "initial" : "none"
 			transparency.parentElement.querySelector(".warning").style.display = transparency.value > 0 ? "none" : "initial"
 			document.querySelector("#floor-lock-dist-wrapper").style.display = floorLock.value == 1 ? "contents" : "none"
-
 		}
 
 		function applyValues() {
@@ -499,7 +477,7 @@
 			transparency.parentElement.querySelector(".warning").style.display = transparency.value == 0 ? "initial" : "none"
 		}
 		document.querySelector("main").onchange = (e) => {
-			if (e.target.matches("form input")) return
+			if (!e.target.matches(".settings-section *")) return
 			applyValues()
 			document.querySelector("#confirmation").classList.add("active")
 		}
@@ -513,7 +491,7 @@
 			);
 			if (fileItems.length > 0) {
 				e.preventDefault();
-				if (!dropZone.contains(e.target)) {
+				if (!importBox.contains(e.target)) {
 					e.dataTransfer.dropEffect = "none";
 				}
 			}
@@ -566,7 +544,8 @@
 						console.error("User canceled import")
 						failed = true
 						break
-					} else {
+					}
+					else {
 						config.name += ` (${(newAuthor.name || newAuthor)})`
 					}
 				}
@@ -583,67 +562,352 @@
 			uploadHandler(fileList)
 		}
 
-		function uploadHandler(files) {
+		let tempConfig
+		async function uploadHandler(files) {
 			const lastUploaded = importBox.querySelector("h4")
 			let fileNames = []
+			let filePaths = []
+			tempConfig = fs.existsSync("../imports/characters/config.json") ? JSON.parse(fs.readFileSync("../imports/characters/config.json")) : []
+
 			for (let file of files) {
 				fileNames.push(file.name)
-				zipImport(file.path)
+				filePaths.push(file.path)
 			}
+			console.time()
+			filePaths.forEach(async (path, i) => {
+				await zipImport(path)
+			});
+			console.timeEnd()
 			lastUploaded.innerText = "Last Uploaded: " + fileNames.join(", ")
 		}
 
-		function zipImport(dir) {
-			fs.readFile(dir, function (err, data) {
-				if (err) throw err;
-				JSzip.loadAsync(data).then(async function (zip) {
-					let zipFiles = zip.files
-					if (zipFiles["config.json"]) {
-						let currentConfig = fs.existsSync("../imports/characters/config.json") ? JSON.parse(fs.readFileSync("../imports/characters/config.json"), {}) : []
-						let fileConfig = JSON.parse(Buffer.from(await (await zipFiles["config.json"].async("blob")).arrayBuffer()).toString())
-						// Check if config is an array
-						if (typeof fileConfig.length != "undefined") {
-							for (let character of fileConfig) {
-								let result = checkDupes(currentConfig, character)
-								if (!result.continue) {
-									console.log(character)
-									delete zipFiles[character["sprite_path"]]
-									delete zipFiles[character["blink_path"]]
-									continue
-								}
-								if (result.toRemove != null)
-									currentConfig.splice(result.toRemove, 1)
-								character = result.value
-								currentConfig.push(character)
-							}
-							fs.writeFileSync("../imports/characters/config.json", JSON.stringify(currentConfig))
-						} else {
-							let result = checkDupes(currentConfig, fileConfig)
-							if (!result.continue) return
-							if (result.toRemove != null)
-								currentConfig.splice(result.toRemove, 1)
-							fileConfig = result.value
-							currentConfig.push(fileConfig)
-							fs.writeFileSync("../imports/characters/config.json", JSON.stringify(currentConfig))
-						}
-						delete zipFiles["config.json"]
-					} else {
-						alert("ERROR: The file is missing a config.json")
-						return
-					}
-					for (let file in zipFiles) {
-						zipFiles[file].async("blob")
-							.then(x => x.arrayBuffer())
-							.then(async fileBuffer => {
-								let filePath = path.join("/../imports/characters/", file)
-								let destPath = path.dirname(filePath)
-								// console.log(destPath)
-								fs.mkdir(destPath, { recursive: true }, (err) => { if (err) throw err; fs.writeFileSync(filePath, Buffer.from(fileBuffer)) })
-							})
-					}
-				});
+		function alphabetSort(a, b) {
+			let lowercaseNameA = a.name.toLowerCase()
+			let lowercaseNameB = b.name.toLowerCase()
+			// Specific outliers for manual sorting
+			if ("!@$^*".includes(lowercaseNameA[0]) && !"!@$^*".includes(lowercaseNameB[0])) return 1
+			else if (!"!@$^*".includes(lowercaseNameA[0]) && "!@$^*".includes(lowercaseNameB[0])) return -1
+			return lowercaseNameA > lowercaseNameB ? 1 : (lowercaseNameA < lowercaseNameB ? -1 : 0)
+		}
+
+		function zipExport(spritePath = spriteLocation, character = character) {
+			let characterZip = new JSzip()
+			characterZip.file("config.json", JSON.stringify(character, null, 4))
+			let spriteData = new Uint8Array(fs.readFileSync(spritePath + character.sprite_path))
+			let blinkData = new Uint8Array(fs.readFileSync(spritePath + character.blink_path))
+			if (character.icon) {
+				let iconData = new Uint8Array(fs.readFileSync(spritePath + character.icon))
+				characterZip.file(character.icon, iconData)
+			}
+			characterZip.file(character.sprite_path, spriteData)
+			characterZip.file(character.blink_path, blinkData)
+
+			characterZip.generateAsync({ type: "base64" }).then(function (base64) {
+				location.href = "data:application/zip;base64," + base64;
 			});
 		}
+
+		function zipTemplateExport() {
+			let characterZip = new JSzip()
+			let character = {
+				"name": "ENA",
+				"sprite_path": "ENA/ena_default.png",
+				"blink_path": "ENA/ena_blink.png",
+				"icon": "ENA/ena_icon.png",
+				"width": 36,
+				"height": 52,
+				"primary_color": "#2c5bf5",
+				"secondary_color": "#ffe308",
+				"author": {
+					"name": "Namity",
+					"color": 3
+				}
+			}
+			characterZip.file("config.json", JSON.stringify(character, null, 4))
+			let spriteData = new Uint8Array(fs.readFileSync(path.join(__dirname, "img/character/ena_default.png")))
+			let blinkData = new Uint8Array(fs.readFileSync(path.join(__dirname, "img/character/ena_blink.png")))
+			let iconData = new Uint8Array(fs.readFileSync(path.join(__dirname, "img/icons/ena.png")))
+
+
+			characterZip.file(character.sprite_path, spriteData)
+			characterZip.file(character.blink_path, blinkData)
+			characterZip.file(character.icon, iconData)
+
+			characterZip.generateAsync({ type: "base64" }).then(function (base64) {
+				location.href = "data:application/zip;base64," + base64;
+			});
+		}
+
+		async function zipImport(dir) {
+			await fs.promises.readFile(dir)
+				.then(
+					function (data) {
+						return JSzip.loadAsync(data)
+					})
+				.then(
+					async function (zip) {
+						let zipFiles = zip.files
+						let fileConfig = JSON.parse(Buffer.from(await (await zipFiles["config.json"].async("blob")).arrayBuffer()).toString())
+						if (zipFiles["config.json"]) {
+							// Check if config is an array
+							if (typeof fileConfig.length != "undefined") {
+								for (let character of fileConfig) {
+									let result = checkDupes(tempConfig, character)
+									if (!result.continue) {
+										delete zipFiles[character.sprite_path]
+										delete zipFiles[character.blink_path]
+										continue
+									}
+									if (result.toRemove != null)
+										tempConfig.splice(result.toRemove, 1)
+									character = result.value
+									tempConfig.unshift(character)
+								}
+								tempConfig.sort(alphabetSort)
+								fs.writeFileSync("../imports/characters/config.json", JSON.stringify(tempConfig, null, 4))
+							} else {
+								let result = checkDupes(tempConfig, fileConfig)
+								if (!result.continue) return
+								if (result.toRemove != null)
+									tempConfig.splice(result.toRemove, 1)
+								fileConfig = result.value
+								tempConfig.unshift(fileConfig)
+								tempConfig.sort(alphabetSort)
+								fs.writeFileSync("../imports/characters/config.json", JSON.stringify(tempConfig, null, 4))
+							}
+							delete zipFiles["config.json"]
+						} else {
+							alert("ERROR: The file is missing a config.json")
+							return
+						}
+						for (let file in zipFiles) {
+							let filePath = path.join(spriteLocation, file)
+							if (zipFiles[file].dir) {
+								try {
+									fs.mkdirSync(filePath)
+								} catch (err) { console.warn(err) }
+								continue
+							}
+							zipFiles[file].async("blob")
+								.then(x => x.arrayBuffer())
+								.then(async fileBuffer => {
+									let destPath = path.dirname(filePath)
+									fs.writeFileSync(filePath, Buffer.from(fileBuffer))
+									ipcRenderer.send("update-menus")
+								})
+						}
+					}).catch((err) => { alert(err); throw err })
+
+		}
+
+		function filterCustoms(value) {
+			let anyEnasLeft = false
+			document.getElementById("imported-characters").childNodes.forEach(slot => {
+				if (!slot.querySelector || !slot.querySelector(".label")) return false
+				if (!value.trim()) {
+					slot.style.display = ""
+					anyEnasLeft = true
+					return false
+				}
+
+				let labelText = slot.querySelector(".label").innerText.toLowerCase();
+				let searchQuery = value.trim().toLowerCase()
+				let accurateLetters = 0
+				let checkedLetters = 0
+				let searchStart = -1
+				for (let i of searchQuery) {
+					let indexResult = labelText.indexOf(i, searchStart)
+					if (indexResult >= 0) {
+						accurateLetters++
+						searchStart = Math.max(indexResult, searchStart)
+					}
+					checkedLetters++
+				}
+				if (accurateLetters / checkedLetters > 0.7) {
+					slot.style.display = ""
+					anyEnasLeft = true
+				} else {
+					slot.style.display = "none"
+				}
+			});
+			if (document.getElementById("no-ena-message").style.display == "none") {
+				noEnaMessageSet()
+			}
+			document.getElementById("no-ena-message").style.display = anyEnasLeft ? "none" : ""
+		}
+
+		let authorColors = ['#ffffff', '#ffffff', '#f86754', '#f8b454', '#f8ea54', '#79ff72', '#6985ff', '#a06dff', '#fd87ff', '#77faff', '#959595', '#959595', '#942314', '#985a02', '#8e8200', '#08a300', '#001c99', '#300089', '#9f00a2', '#007b80', '#1f1f1f', '#1f1f1f', '#ff0000', '#ff8400', '#ffff00', '#00ff00', '#0000ff', '#6a00ff', '#ff00ff', '#00ffff']
+
+		let characterSlotTemplate = `<div class="btn btn-dark import-slot">
+								<canvas width="100" height="100"></canvas>
+								<span class="label">
+									<span>Stupid ENA</span>
+									<h6>by TheDiamondfinderNG</h6>
+								</span>
+								<span class="btn-group">
+									<button aria-label="Download"
+										class="btn btn-info download-button"
+										title="Downloads a ENA zip for easy sharing">
+										<fa-icon class="ng-fa-icon">
+											<svg role="img" aria-hidden="true"
+												focusable="false"
+												data-prefix="fas"
+												data-icon="arrow-down"
+												class="svg-inline--fa fa-arrow-down fa-fw"
+												xmlns="http://www.w3.org/2000/svg"
+												viewBox="0 0 384 512">
+												<path fill="currentColor"
+													d="M169.4 502.6c12.5 12.5 32.8 12.5 45.3 0l160-160c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L224 402.7 224 32c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 370.7-105.4-105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l160 160z">
+												</path>
+											</svg>
+										</fa-icon>
+									</button>
+									<button aria-label="Open Location"
+										class="btn btn-info open-button"
+										title="Open sprite in directory">
+										<fa-icon class="ng-fa-icon">
+											<svg role="img" aria-hidden="true"
+												focusable="false"
+												data-prefix="fas"
+												data-icon="arrow-down"
+												class="svg-inline--fa fa-arrow-down fa-fw"
+												xmlns="http://www.w3.org/2000/svg"
+												viewBox="0 0 512 512">
+												<path fill="currentColor"
+													d="M64 448l384 0c35.3 0 64-28.7 64-64l0-240c0-35.3-28.7-64-64-64L298.7 80c-6.9 0-13.7-2.2-19.2-6.4L241.1 44.8C230 36.5 216.5 32 202.7 32L64 32C28.7 32 0 60.7 0 96L0 384c0 35.3 28.7 64 64 64z">
+												</path>
+											</svg>
+										</fa-icon>
+									</button>
+									<button aria-label="Delete ENA"
+										class="btn btn-danger remove-button"
+										title="Deletes the save. Shift+Click to skip confirmation">
+										<fa-icon class="ng-fa-icon">
+											<svg role="img" aria-hidden="true"
+												focusable="false"
+												data-prefix="fas"
+												data-icon="trash"
+												class="svg-inline--fa fa-trash fa-fw"
+												xmlns="http://www.w3.org/2000/svg"
+												viewBox="0 0 448 512">
+												<path fill="currentColor"
+													d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3 0 46.3-19.7 47.9-45L416 128z">
+												</path>
+											</svg>
+										</fa-icon>
+									</button>
+								</span>
+							</div>`
+
+		async function createCharacter(character) {
+			let characterSlotWrapper = document.createElement("div")
+			characterSlotWrapper.innerHTML = characterSlotTemplate
+			let characterSlot = characterSlotWrapper.childNodes[0]
+			let characterLabel = characterSlot.querySelector(".label")
+			document.getElementById("imported-characters").append(characterSlot)
+			characterLabel.querySelector("span").innerText = character.name
+			characterLabel.querySelector("h6").innerText = (character.author ? "by " + (character.author.name || character.author) : "Uncredited")
+			if (character.author && character.author.color) characterLabel.querySelector("h6").style.color = authorColors[character.author.color]
+			let characterPreview = characterSlot.getElementsByTagName("canvas")[0]
+			characterPreview.width = character.width * 2 || 72
+			characterPreview.height = character.height * 2 || 104
+			let previewCtx = characterPreview.getContext("2d")
+
+			characterSlot.querySelector('.remove-button').addEventListener('click', () => {
+				if (!confirm("Are you sure you want to delete this character? This cannot be undone"))
+					return
+
+				characterArray.splice(characterArray.indexOf(character), 1)
+				fs.writeFile("../imports/characters/config.json", JSON.stringify(characterArray, null, 4), (x) => {
+					ipcRenderer.send("update-menus")
+					updateSlots()
+				})
+				fs.rmSync(spriteLocation + character.sprite_path)
+				fs.rmSync(spriteLocation + character.blink_path)
+			})
+
+			characterSlot.querySelector('.open-button').addEventListener('click', () => {
+				shell.showItemInFolder(path.join(spriteLocation + character.sprite_path))
+			})
+
+			characterSlot.querySelector('.download-button').addEventListener('click', () => { zipExport(spriteLocation, character) })
+
+			previewCtx.imageSmoothingEnabled = false
+			previewCtx.shadowOffsetX = -5
+			previewCtx.shadowOffsetY = 5
+			previewCtx.shadowColor = "rgba(0,0,0,0.3)"
+			let toLoad = {}
+			let fileName = character.sprite_path
+			toLoad[fileName] = spriteLocation + character.sprite_path
+			if (!(imageUtils.imgs[fileName]))
+				await imageUtils.loadImages(toLoad)
+			let recoloredEna = await animateUtils.recolorImage(imageUtils.imgs[fileName], [character.primary_color, character.secondary_color], true, { ...character })
+			await previewCtx.drawImage(recoloredEna, -(recoloredEna.width / 10 - (character.width || 36)) * 3 - (character.width * 2 || 72), 0, recoloredEna.width * 2, recoloredEna.height * 2)
+			imageUtils.loaded = 0
+
+			return characterSlot
+		}
+
+		function noEnaMessageSet() {
+			let noEnaMessages = [
+				"No ENAs found",
+				"\"OUT ON BARBECUE\"",
+				"\"OUT FOR AUCTION DAY\"",
+				"But nobody came...",
+				"They probably got lost on the way here",
+				"<span style=\"font-size: 16px;font-style: italic;font-weight: normal;\">maybe if we whisper, we can sneak up on one</span>",
+				"No intelligent (or unintelligent) life found",
+				"Mildly to non-humorous comment",
+				"CHEESE AND RICE MOONY<br /><span style=\"opacity:20%; font-size: 16px;font-style: italic;font-weight: normal;\">that reference doesn't even make sense i'm losing it</span>",
+				"Remember, <span style=\"color: red\">you</span> are welcome to try again",
+				"I'm running out of ideas",
+				"Maybe look under there? <br /><span style=\"opacity:20%; font-size: 16px;font-style: italic;font-weight: normal;\">haha you said underwear</span>",
+				`WOAH DID YOU SEE THAT <br /><marquee width="25%" scrollamount="140" style="word-spacing: 300em;">🛸&nbsp</marquee>`,
+				"None here. Did you try booby traps?",
+				"There were some here, but I ate them all.",
+				"Sorry, they're allergic to people :(",
+			]
+			let connectionTerminated = "<p style=\"font-size: 16px;font-weight: normal;\">Connection terminated. I'm sorry to interrupt you, Elizabeth, if you still even remember that name, But I'm afraid you've been misinformed. You are not here to find an ENA, nor have you been called here by the individual you assume, although, you have indeed been called. You have all been called here, into a labyrinth of sounds and smells, misdirection and misfortune. A labyrinth with no exit, a maze with no prize. You don't even realize that you are trapped. Your lust for ENA pets has driven you in endless circles, chasing the cries of ENAs in some unseen chamber, always seeming so near, yet somehow out of reach, but you will never find them. None of you will. This is where your story ends. And to you, my brave volunteer, who somehow found this job listing not intended for you, although there was a way out planned for you, I have a feeling that's not what you want. I have a feeling that you are right where you want to be. I am remaining as well. I am nearby. This place will not be remembered, and the memory of everything that started this can finally begin to fade away. As the agony of every tragedy should. And to you monsters trapped in the corridors, be still and give up your spirits. They don't belong to you. For most of you, I believe there is peace and perhaps more waiting for you after the smoke clears. Although, for one of you, the darkest pit of Hell has opened to swallow you whole, so don't keep the devil waiting, old friend. My daughter, if you can hear me, I knew you would return as well. It's in your nature to protect the innocent. I'm sorry that on that day, the day you were shut out and left to die, no one was there to lift you up into their arms the way you lifted others into yours, and then, what became of you. I should have known you wouldn't be content to disappear, not my daughter. I couldn't save you then, so let me save you now. It's time to rest - for you, and for those you have carried in your arms. This ends for all of us. End communication.</p>"
+			document.getElementById("no-ena-message").innerHTML = noEnaMessages[Math.floor(Math.random() * noEnaMessages.length)]
+			// 1/200 odds for the funny FNAF message
+			if (Math.random() >= 0.995)
+				document.getElementById("no-ena-message").innerHTML = connectionTerminated
+		}
+
+		let spriteLocation = path.join(__dirname, "../imports/characters/"),
+			characterData = "",
+			characterArray = [],
+			slots = []
+		document.getElementById("no-ena-message").style.display = ""
+		noEnaMessageSet()
+		document.getElementById("search").style.display = "none"
+		async function createSlots() {
+			for (let character of characterArray) {
+				document.getElementById("search").style.display = ""
+				document.getElementById("no-ena-message").style.display = "none"
+				try {
+					slots.unshift(await createCharacter(character))
+				} catch (err) {
+					console.error(err)
+					console.log(character)
+					console.error("Character '" + character + "' corrupted")
+				}
+			}
+		}
+
+		function clearSlots() {
+			slots.forEach(slot => slot.remove())
+			slots = []
+		}
+
+		function updateSlots() {
+			clearSlots()
+			characterData = fs.readFileSync(spriteLocation + "config.json").toString()
+			characterArray = JSON.parse(characterData)
+			characterArray.sort(alphabetSort)
+			createSlots()
+		}
+		updateSlots()
 	</script>
 </body>
 

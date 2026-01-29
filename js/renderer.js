@@ -229,7 +229,7 @@ document.querySelector('#duplicate-btn').addEventListener('click', (event) => {
 document.querySelector('#save-btn').addEventListener('click', (event) => {
     event.target.disabled = true;
     let id = characters.value;
-
+    
     if (id != -1) {
         ipcRenderer.send('update-character-state', id, {
             primary: document.querySelector('.primary-color-value').value,
@@ -241,6 +241,7 @@ document.querySelector('#save-btn').addEventListener('click', (event) => {
         ipcRenderer.send('update-background', document.querySelector('.background-color-value').value);
         ipcRenderer.send('requestChangeColor', Number(id));
         ipcRenderer.send('requestAccessory', Number(id));
+        ipcRenderer.send("save-settings")
     }
 });
 
@@ -309,6 +310,7 @@ document.querySelector('[title="Flip preview"]').addEventListener('click', (even
 
 characters.addEventListener('change', (event) => {
     let id = Number(characters.value);
+    let characterStates = ipcRenderer.sendSync('get-character-state', id)
     if (document.getElementsByClassName('character-tab-none').length > 0) {
         document.querySelector('.character-tab').classList.remove('character-tab-none');
         document.querySelector("#duplicate-btn").disabled = false;
@@ -316,27 +318,26 @@ characters.addEventListener('change', (event) => {
 
     // Update Settings
     document.querySelector('.background-color').style.setProperty('--color', ipcRenderer.sendSync('get-background'));
-    document.querySelector('.primary-color').style.setProperty('--color', ipcRenderer.sendSync('get-character-state', id).primary);
-    document.querySelector('.secondary-color').style.setProperty('--color', ipcRenderer.sendSync('get-character-state', id).secondary);
-    document.querySelector('.tertiary-color').style.setProperty('--color', ipcRenderer.sendSync('get-character-state', id).tertiary);
-    document.querySelector('.quaternary-color').style.setProperty('--color', ipcRenderer.sendSync('get-character-state', id).quaternary);
+    document.querySelector('.primary-color').style.setProperty('--color', characterStates.primary);
+    document.querySelector('.secondary-color').style.setProperty('--color', characterStates.secondary);
+    document.querySelector('.tertiary-color').style.setProperty('--color', characterStates.tertiary);
+    document.querySelector('.quaternary-color').style.setProperty('--color', characterStates.quaternary);
     document.querySelector('.background-color-value').value = ipcRenderer.sendSync('get-background');
-    document.querySelector('.primary-color-value').value = ipcRenderer.sendSync('get-character-state', id).primary;
-    document.querySelector('.secondary-color-value').value = ipcRenderer.sendSync('get-character-state', id).secondary;
-    document.querySelector('.tertiary-color-value').value = ipcRenderer.sendSync('get-character-state', id).tertiary;
-    document.querySelector('.quaternary-color-value').value = ipcRenderer.sendSync('get-character-state', id).quaternary;
-    document.querySelector('#accessory').value = ipcRenderer.sendSync('get-character-state', id).accessory;
-    
+    document.querySelector('.primary-color-value').value = characterStates.primary;
+    document.querySelector('.secondary-color-value').value = characterStates.secondary;
+    document.querySelector('.tertiary-color-value').value = characterStates.tertiary;
+    document.querySelector('.quaternary-color-value').value = characterStates.quaternary;
+    document.querySelector('#accessory').value = characterStates.accessory;
+
     if (characterPreview != null) {
         characterPreview.scale = characterPreview.clamp(Number(ipcRenderer.sendSync('get-scale')), 1, 6);
-        let characterStates = ipcRenderer.sendSync('get-character-state', id);
         characterPreview.setUsername('^0' + characterStates.characterName + `#${generateNumber(id)}`);
 
-        characterPreview.setRole(characterStates.author ? "^"+(characterStates.author.color || 1)+"Made by:"+(characterStates.author.name || characterStates.author ): "");
+        characterPreview.setRole(characterStates.author ? "^" + (characterStates.author.color || 1) + "Made by:" + (characterStates.author.name || characterStates.author) : "");
         const imgPath = path.join(__dirname, 'character');
         let sprites = {
-            character: ((characterStates.custom ? (characterStates.imported ? "../imports/characters/" : imgPath + '\\') : "") + characterStates.sprite),
-            eyes: ((characterStates.custom ? (characterStates.imported ? "../imports/characters/" : imgPath + '\\') : "") + characterStates.blink),
+            character: ((characterStates.custom ? (characterStates.imported ? "../imports/characters/" : imgPath + '\\') : "img/character/") + characterStates.sprite),
+            eyes: ((characterStates.custom ? (characterStates.imported ? "../imports/characters/" : imgPath + '\\') : "img/character/") + characterStates.blink),
             ena: 'img/accessory/Ena_accessory.png',
             bbq_ena: 'img/accessory/BBQEna_accessory.png',
             shepherd: 'img/accessory/Shepherd_accessory.png',
@@ -400,13 +401,13 @@ characters.addEventListener('change', (event) => {
             const frameHeight = imgs.character.height / 4;
 
             characterPreview.createCharacter(imgs.character, imgs.eyes, characterStates.characterName.toLowerCase(), ((400 / 2) - (frameWidth * characterPreview.scale / 2)) / characterPreview.scale, ((400 / 2) - (frameHeight * characterPreview.scale / 2)) / characterPreview.scale, frameWidth, frameHeight, document.querySelector("#animations").value + (direction ? '-l' : '-r'), {
-                accessory: ipcRenderer.sendSync('get-character-state', id).accessory,
-                primary: ipcRenderer.sendSync('get-character-state', id).primary,
-                secondary: ipcRenderer.sendSync('get-character-state', id).secondary,
-                tertiary: ipcRenderer.sendSync('get-character-state', id).tertiary,
-                quaternary: ipcRenderer.sendSync('get-character-state', id).quaternary,
-                hueShift: ipcRenderer.sendSync('get-character-state', id).hueShift,
-                darknessOffset: ipcRenderer.sendSync('get-character-state', id).darknessOffset,
+                accessory: characterStates.accessory,
+                primary: characterStates.primary,
+                secondary: characterStates.secondary,
+                tertiary: characterStates.tertiary,
+                quaternary: characterStates.quaternary,
+                hueShift: characterStates.hueShift,
+                darknessOffset: characterStates.darknessOffset,
             }, characterStates.custom, 'db/');
             paused = false;
         }).catch((error) => {

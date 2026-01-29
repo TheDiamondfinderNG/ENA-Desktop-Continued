@@ -22,7 +22,7 @@ a {
 }
 
 a:focus:not(:focus-visible) {
-  outline: none;
+    outline: none;
 }
 
 a:hover {
@@ -252,6 +252,7 @@ menu-bar {
     transition: --var1 .35s ease;
     transform: translate3d(0, 0, 0);
     overflow: auto;
+
     &:has(.settings) {
         transform: none;
     }
@@ -829,6 +830,7 @@ svg:not(:root).svg-inline--fa {
     display: -webkit-box;
     display: -ms-flexbox;
     display: flex;
+    max-width: 100%;
 }
 
 .input-group-append>div {
@@ -857,7 +859,7 @@ svg:not(:root).svg-inline--fa {
     cursor: pointer;
     -webkit-user-select: none;
     -moz-user-select: none;
-    -ms-user-select: none; 
+    -ms-user-select: none;
     user-select: none;
     appearance: none;
     border-bottom-left-radius: 0 !important;
@@ -866,7 +868,7 @@ svg:not(:root).svg-inline--fa {
 }
 
 .btn:focus:not(:focus-visible) {
-  outline: 0;
+    outline: 0;
 }
 
 .btn-dark {
@@ -892,7 +894,9 @@ svg:not(:root).svg-inline--fa {
     color: #ddd;
 }
 
-.save-slot, #new-save, .save-slot-dummy {
+.save-slot,
+#new-save,
+.save-slot-dummy {
     text-align: left;
     font-weight: 400;
     font-size: 1.5rem;
@@ -947,6 +951,7 @@ svg:not(:root).svg-inline--fa {
     overflow-y: hidden;
     white-space: nowrap;
 }
+
 .save-slot .label:not(:focus) {
     overflow-x: scroll;
     text-overflow: ellipsis;
@@ -981,13 +986,15 @@ svg:not(:root).svg-inline--fa {
     width: 1em;
 }
 
-.edit-button, .favorite-button {
+.edit-button,
+.favorite-button {
     color: #848484;
     padding: 0;
     padding-left: 1em;
 }
 
-.edit-button fa-icon, .favorite-button fa-icon{
+.edit-button fa-icon,
+.favorite-button fa-icon {
     font-size: 1.25rem;
 }
 
@@ -1001,7 +1008,7 @@ svg:not(:root).svg-inline--fa {
     transition: all 0.1s;
 }
 
-.save-bottom .favorite-button fa-icon{
+.save-bottom .favorite-button fa-icon {
     font-size: 1.5rem;
 }
 
@@ -1034,19 +1041,122 @@ svg:not(:root).svg-inline--fa {
     visibility: hidden;
 }
 
+
+#import-tabs {
+    position: relative;
+    margin: 2em 0;
+}
+
+.tab-contents {
+    background: #212121;
+    margin: 0.25rem 0;
+    position: relative;
+    z-index: 1;
+    border-radius: 0 12px 12px;
+    border: #131313 2px solid;
+}
+
+.tab {
+    background: #1B1B1B;
+    position: relative;
+    z-index: 0;
+    border: #131313 2px solid;
+    border-radius: 12px 12px 0 0;
+    font-weight: bold;
+    padding: 0.5rem 3rem;
+    border-bottom: none;
+    cursor: pointer;
+}
+
+.selected-tab {
+    background: #212121;
+    z-index: 2;
+    cursor: auto;
+}
+
+.tab-contents {
+    padding-top: 2.5rem;
+    display: none
+}
+
+#search {
+    position: absolute;
+    padding: 4px 8px;
+    top: 2.5rem;
+    left: 2rem;
+    color: #fff;
+    width: calc(100% - 64px);
+    border-width: 2px;
+    border-color: #161616;
+    font-weight: bold;
+    font-size: 24px;
+    outline: none;
+    z-index: 2;
+}
+
+#no-ena-message {
+    text-align: center;
+    margin: 0.5em;
+}
+
+#search[style*="display: none"]~#imported-characters {
+    #no-ena-message {
+        margin-top: -0.5em;
+    }
+
+    >.btn-group {
+        padding-top: 0 !important;
+        margin-bottom: 1.5em;
+    }
+
+}
+
+#character-tab.selected-tab~#imported-characters {
+    display: block;
+
+    >.btn-group {
+        width: 100%;
+        padding: 1rem;
+        .btn{
+            margin: 0.5rem;
+        }
+    }
+}
+
+#accessory-tab.selected-tab~#imported-accessories {
+    padding: 3em;
+    text-align: center;
+    display: block;
+}
+
 .import-slot {
     font-weight: 400;
     font-size: 1.5rem;
     margin: 1rem;
-    padding: 0.75rem 1.5rem !important;
+    padding: 0.75rem 1.5rem 0.75rem 0.75rem !important;
     border-radius: 0.5rem !important;
     display: flex;
     transition: scale 0.4s;
+    cursor: auto;
+
+
+    .label {
+        text-align: left;
+        padding: 0 0.5em;
+        border-left: #313131 solid 1px;
+    }
+
+}
+
+.import-slot canvas {
+    height: min-content;
+    margin-top: auto;
 }
 
 .import-slot .btn-group {
     margin-left: auto;
     flex-direction: column;
+
     .btn {
         border-radius: 3px !important;
         margin: 3px 0 !important;
@@ -1057,7 +1167,7 @@ svg:not(:root).svg-inline--fa {
     text-align: center;
     border-style: dashed !important;
     background: #1f1f1f1f;
-    display: block  ;
+    display: block;
 }
 
 #new-save:hover {
@@ -1068,16 +1178,17 @@ svg:not(:root).svg-inline--fa {
 
 .settings-section {
     padding: 2rem 0 0 !important;
-    border-bottom: #48484833 solid 1px
+    border-bottom: #212121 solid 1px
 }
 
 .settings-section input {
-    display: inline-block;
+    display: block;
     float: right;
-    + slider-bar{
+
+    +slider-bar {
         max-width: 400px;
         width: 100%;
-        float:right;
+        float: right;
     }
 }
 
@@ -1098,7 +1209,8 @@ svg:not(:root).svg-inline--fa {
     border-radius: 6px;
     padding: 1rem;
     transition: bottom 0.5s;
-    .btn-group .btn{
+
+    .btn-group .btn {
         margin: 0.25em
     }
 }
@@ -1116,7 +1228,7 @@ svg:not(:root).svg-inline--fa {
 }
 
 .warning::before {
-    content: url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free v7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path d="M256 512a256 256 0 1 1 0-512 256 256 0 1 1 0 512zm0-192a32 32 0 1 0 0 64 32 32 0 1 0 0-64zm0-192c-18.2 0-32.7 15.5-31.4 33.7l7.4 104c.9 12.6 11.4 22.3 23.9 22.3 12.6 0 23-9.7 23.9-22.3l7.4-104c1.3-18.2-13.1-33.7-31.4-33.7z"/></svg>');
+    content: url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M256 512a256 256 0 1 1 0-512 256 256 0 1 1 0 512zm0-192a32 32 0 1 0 0 64 32 32 0 1 0 0-64zm0-192c-18.2 0-32.7 15.5-31.4 33.7l7.4 104c.9 12.6 11.4 22.3 23.9 22.3 12.6 0 23-9.7 23.9-22.3l7.4-104c1.3-18.2-13.1-33.7-31.4-33.7z"/></svg>');
     display: inline-block;
     vertical-align: middle;
     width: 1rem;
@@ -1153,10 +1265,12 @@ svg:not(:root).svg-inline--fa {
         font-family: inherit;
         font-weight: normal;
     }
+
     .dropdown-toggle {
         top: 2px;
     }
-    .col-form-label{
+
+    .col-form-label {
         margin: auto;
     }
 }
