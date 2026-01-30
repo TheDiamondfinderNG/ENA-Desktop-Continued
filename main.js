@@ -728,13 +728,15 @@ function updateTray() {
     try {
         const importPath = path.join(__dirname, '../imports/characters', 'config.json');
         if(!fs.existsSync(importPath)){
-            fs.mkdirSync("../imports/characters", {recursive: true})
-            fs.writeFileSync("../imports/characters/config.json", "[]")
+            fs.mkdirSync(path.join(__dirname, '../imports/characters'), {recursive: true})
+            fs.writeFileSync(importPath, "[]", {recursive: true})
         }
         importsConfig = JSON.parse(fs.readFileSync(importPath, 'utf8'));
         if (Object.keys(importsConfig).length) newImportedCharacterSubMenu = []
     } catch (err) {
         console.error('Error reading imports config file:', err);
+        if(!importsConfig)
+        importsConfig = []
     }
 
 
@@ -760,6 +762,7 @@ function updateTray() {
         });
     });
 
+    if(importsConfig)
     importsConfig.forEach((character, i) => {
         let icon = nativeImage.createFromPath(path.join(__dirname, character.icon ? '../imports/characters/' + character.icon : 'img/icons/custom.png'))
         icon = icon.resize({ width: 16, height: 16, quality: "best" })
