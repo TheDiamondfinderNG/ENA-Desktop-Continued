@@ -229,7 +229,7 @@ document.querySelector('#duplicate-btn').addEventListener('click', (event) => {
 document.querySelector('#save-btn').addEventListener('click', (event) => {
     event.target.disabled = true;
     let id = characters.value;
-    
+
     if (id != -1) {
         ipcRenderer.send('update-character-state', id, {
             primary: document.querySelector('.primary-color-value').value,
@@ -307,6 +307,28 @@ document.querySelector('[title="Flip preview"]').addEventListener('click', (even
     if (Number(characters.value) != -1) charName.activeAnimation = document.querySelector('#animations').value + (direction ? '-l' : '-r');
 });
 
+let accessories = ipcRenderer.sendSync("requestAccessories")
+let flatAccessories = accessories.flattened
+for (let accessoryId in accessories.defaults) {
+    let accOption = document.createElement('option');
+    accOption.value = accessoryId;
+    accOption.innerHTML = flatAccessories[accessoryId].label || accessoryId;
+    document.querySelector("#accessory").options.add(accOption)
+}
+if (Object.keys(accessories.imports).length) {
+    let accSep = document.createElement('option');
+    accSep.disabled = true;
+    accSep.style = "display: initial";
+    accSep.innerHTML = "───── Imported Accessories ─────";
+    document.querySelector("#accessory").options.add(accSep)
+}
+for (let accessoryId in accessories.imports) {
+    let accOption = document.createElement('option');
+    accOption.value = accessoryId;
+    accOption.innerHTML = flatAccessories[accessoryId].label || accessoryId;
+    document.querySelector("#accessory").options.add(accOption)
+}
+
 
 characters.addEventListener('change', (event) => {
     let id = Number(characters.value);
@@ -338,50 +360,17 @@ characters.addEventListener('change', (event) => {
         let sprites = {
             character: ((characterStates.custom ? (characterStates.imported ? "../imports/characters/" : imgPath + '\\') : "img/character/") + characterStates.sprite),
             eyes: ((characterStates.custom ? (characterStates.imported ? "../imports/characters/" : imgPath + '\\') : "img/character/") + characterStates.blink),
-            ena: 'img/accessory/Ena_accessory.png',
-            bbq_ena: 'img/accessory/BBQEna_accessory.png',
-            shepherd: 'img/accessory/Shepherd_accessory.png',
-            margo: 'img/accessory/Margo_accessory.png',
-            ula: 'img/accessory/Ula_accessory.png',
-            hg_dog: 'img/accessory/HourglassDog_accessory.png',
-            turron: 'img/accessory/Turron_accessory.png',
-            pumpkin: 'img/accessory/Pumpkin_accessory.png',
-            ena_bunny: 'img/accessory/EnaBunny_accessory.png',
-            clown_dog: 'img/accessory/ClownDog_accessory.png',
-            dog_grim: 'img/accessory/DogGrim_accessory.png',
-            margo_kitty: 'img/accessory/MargoKitty_accessory.png',
-            lollipop: 'img/accessory/Lollipop_accessory.png',
-            eve_hat: 'img/accessory/pt_eveHat_accessory.png',
-            bbq_bunny: 'img/accessory/EnaBunnyBBQ_accessory.png',
-            phone: 'img/accessory/phone_accessory.png',
-            leek: 'img/accessory/leek_accessory.png',
-            baguette: 'img/accessory/baguette_accessory.png',
-            pearto: 'img/accessory/pearto_accessory.png'
         }
-
+        for (let accessoryId in flatAccessories) {
+            sprites[accessoryId] = flatAccessories[accessoryId].path || flatAccessories[accessoryId]
+        }
+        console.log(flatAccessories)
         const imageUtils_2 = new ImageUtils();
         imageUtils_2.loadImages(sprites).then((imgs) => {
-            var acc = {
-                ena: imgs.ena,
-                bbq_ena: imgs.bbq_ena,
-                shepherd: imgs.shepherd,
-                margo: imgs.margo,
-                ula: imgs.ula,
-                hg_dog: imgs.hg_dog,
-                turron: imgs.turron,
-                pumpkin: imgs.pumpkin,
-                ena_bunny: imgs.ena_bunny,
-                clown_dog: imgs.clown_dog,
-                dog_grim: imgs.dog_grim,
-                margo_kitty: imgs.margo_kitty,
-                lollipop: imgs.lollipop,
-                eve_hat: imgs.eve_hat,
-                bbq_bunny: imgs.bbq_bunny,
-                phone: imgs.phone,
-                leek: imgs.leek,
-                baguette: imgs.baguette,
-                pearto: imgs.pearto
-            };
+            var acc = {}
+            for (let accessoryId in flatAccessories) {
+                acc[accessoryId] = imgs[accessoryId]
+            }
             characterPreview.saveAccessory(acc);
             characterPreview.createAnimation('idle-l', 1, 0, true, [[0, 0], [0, 0], [0, 0]]);
             characterPreview.createAnimation('idle-r', 1, 1, true, [[1, 0], [1, 0], [1, 0]]);

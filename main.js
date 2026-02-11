@@ -8,11 +8,13 @@ const path = require('path');
 const fs = require('fs');
 const isSecondInstance = app.requestSingleInstanceLock();
 
+let devMode = process.argv.includes("--dev") || process.argv.includes("-d")
+
 if (!isSecondInstance) { // Close the new instance if one is already running
+    console.log('\x1b[31m%s\x1b[0m', 'More than one instance, leaving Desktop ENA...\nIf this isn\'t expected, make sure there aren\'t any loose instances running in task manager');
     app.quit();
 }
 
-let devMode = process.argv.includes("--dev") || process.argv.includes("-d")
 
 // We enable the following commands to fix the DPI (Scaled Screen)
 app.commandLine.appendSwitch('high-dpi-support', 'true');
@@ -25,6 +27,8 @@ const dataPath = (isAsarFile ? path.normalize(__dirname + "\\..") : __dirname)
 
 const configPath = path.join(dataPath, 'preferences.json');
 const savePath = path.join(dataPath, 'saves.json');
+
+let globalAccessoriesConfig = { defaults: {}, imports: {} }
 let tray = null;
 let currentBackground = '#90ee90' // manage.html Character Background
 let currentLanguage = 'en';
@@ -39,6 +43,7 @@ let floorSnapDistance = 25;
 let petStrength = 2;
 let petDecay = 5;
 let transparency = 1;
+let inactiveTransparency = 1;
 let bounciness = 1
 let darkness = 50;
 let allowCustoms = false;
@@ -75,10 +80,22 @@ async function savePreferences() {
         pet_strength: petStrength,
         pet_decay: petDecay,
         transparency: transparency,
+        inactive_transparency: inactiveTransparency,
         bounciness: bounciness
     };
     try {
         await fs.promises.writeFile(configPath, JSON.stringify(preferences), "utf-8");
+        // Attempt file read
+        let success = false
+        while (!success)
+            try {
+                JSON.stringify(fs.readFileSync(configPath))
+                success = true
+            } catch (error) {
+                console.log(error, fs.readFileSync(configPath))
+                console.log("Read failed! Retrying save...")
+                await fs.promises.writeFile(configPath, JSON.stringify(preferences), "utf-8");
+            }
     } catch (err) {
         console.error("Error saving preferences: ", err);
     }
@@ -105,6 +122,7 @@ async function loadPreferences() {
             if (typeof preferences.pet_strength != "undefined") petStrength = preferences.pet_strength
             if (typeof preferences.pet_decay != "undefined") petDecay = preferences.pet_decay
             if (typeof preferences.transparency != "undefined") transparency = preferences.transparency
+            if (typeof preferences.inactive_transparency != "undefined") inactiveTransparency = preferences.inactive_transparency
             if (typeof preferences.bounciness != "undefined") bounciness = preferences.bounciness
         } catch (err) {
             console.error("Error loading preferences: ", err);
@@ -149,9 +167,9 @@ async function getSaves() {
                                 buttons: ["Yes", "No"]
                             })
                             .then(dialogResponse => {
-                                if (!dialogResponse.response){
+                                if (!dialogResponse.response) {
                                     fs.promises.writeFile(savePath, data).then(
-                                        ()=>{
+                                        () => {
                                             fs.promises.rm(backupPath)
                                         }
                                     )
@@ -242,10 +260,10 @@ ipcMain.on('channel1', (event, arg) => {
             characterStates[win.id].lastEvent.sender.send('setIsImported', characterStates[win.id].imported);
             characterStates[win.id].lastEvent.sender.send('setPetStrength', petStrength);
             characterStates[win.id].lastEvent.sender.send('setPetDecay', petDecay);
-            characterStates[win.id].lastEvent.sender.send('setTransparency', transparency);
+            characterStates[win.id].lastEvent.sender.send('setTransparency', currentIgnore ? currentIgnore : transparency);
             characterStates[win.id].lastEvent.sender.send('changeSprite', characterStates[win.id].sprite, characterStates[win.id].blink);
             characterStates[win.id].lastEvent.sender.send('changeScale', currentScale);
-            characterStates[win.id].lastEvent.sender.send('changeAccessory', characterStates[win.id].accessory);
+            characterStates[win.id].lastEvent.sender.send('changeAccessory', characterStates[win.id].accessory, false, globalAccessoriesConfig);
         }
     }
 });
@@ -355,6 +373,11 @@ ipcMain.on('duplicate-character', (event, id) => {
     });
 });
 
+ipcMain.on('fetch-accessories', (event) => {
+    event.returnValue = globalAccessoriesConfig
+}
+)
+
 ipcMain.on('update-background', (event, color) => {
     currentBackground = color;
     savePreferences();
@@ -390,6 +413,7 @@ ipcMain.on("reload-preferences", e => {
             petStrength: petStrength,
             petDecay: petDecay,
             transparency: transparency,
+            inactiveTransparency: inactiveTransparency,
             bounciness: bounciness
         }
     })
@@ -450,15 +474,30 @@ ipcMain.on('update-transparency', (event, val) => {
     if (transparency == val) return
     transparency = val;
     for (const character in characterStates) {
-        characterStates[character].lastEvent.sender.send('setTransparency', val);
+        characterStates[character].lastEvent.sender.send('setTransparency', currentIgnore ? inactiveTransparency : transparency);
     }
 });
 
 ipcMain.on('get-transparency', (event) => {
     for (const character in characterStates) {
-        characterStates[character].lastEvent.sender.send('setTransparency', transparency);
+        characterStates[character].lastEvent.sender.send('setTransparency', currentIgnore ? inactiveTransparency : transparency);
     }
     event.returnValue = transparency;
+});
+
+ipcMain.on('update-inactive-transparency', (event, val) => {
+    if (inactiveTransparency == val) return
+    inactiveTransparency = val;
+    for (const character in characterStates) {
+        characterStates[character].lastEvent.sender.send('setTransparency', currentIgnore ? inactiveTransparency : transparency);
+    }
+});
+
+ipcMain.on('get-inactive-transparency', (event) => {
+    for (const character in characterStates) {
+        characterStates[character].lastEvent.sender.send('setTransparency', currentIgnore ? inactiveTransparency : transparency);
+    }inactiveTransparency
+    event.returnValue = inactiveTransparency;
 });
 
 
@@ -532,7 +571,7 @@ ipcMain.on('load-save', (event, save, append = false) => {
     loadSave(save, append)
 });
 
-ipcMain.on("update-menus", ()=>{
+ipcMain.on("update-menus", () => {
     updateTray()
     windows.forEach(win => {
         characterStates[win.id].menu = null;
@@ -558,10 +597,31 @@ ipcMain.on('requestAccessory', (event, id) => {
     if (win) {
         const shimejiStates = characterStates[win.id];
         if (shimejiStates.lastEvent) {
-            shimejiStates.lastEvent.sender.send('changeAccessory', shimejiStates.accessory, [shimejiStates.tertiary, shimejiStates.quaternary]);
+            shimejiStates.lastEvent.sender.send('changeAccessory', shimejiStates.accessory, false, globalAccessoriesConfig);
         }
     }
 });
+
+ipcMain.on('requestAccessories', (event) => {
+    let acc = { ...globalAccessoriesConfig }
+    acc.flattened = (() => {
+        let accFlat = {}
+        for (let i in acc.defaults) {
+            if (acc.defaults[i].path)
+                accFlat[i] = { ...acc.defaults[i], path: "img/accessory/" + acc.defaults[i].path }
+            else accFlat[i] = "img/accessory/" + acc.defaults[i]
+        }
+
+        for (let i in acc.imports) {
+            if (acc.imports[i].path)
+                accFlat[i] = { ...acc.imports[i], path: "../imports/accessories/" + acc.imports[i].path }
+            else accFlat[i] = "../imports/accessories/" + acc.imports[i]
+        }
+        return accFlat
+    })()
+    event.returnValue = acc
+});
+
 
 ipcMain.on('get-character-state', (event, id) => {
     event.returnValue = sanitizeObject(characterStates[id]);
@@ -591,6 +651,15 @@ ipcMain.on('update-character-state', (event, id, newState) => {
         Object.assign(characterState, newState)
         event.sender.send('character-state-updated', id)
     }
+});
+
+ipcMain.on('unlockTanya', (event) => {
+    globalAccessoriesConfig.defaults["Tanya accessory!"] = "Tanya_accessory.png"
+    fs.writeFileSync(path.join(__dirname, "img/accessory/config.json"), JSON.stringify(globalAccessoriesConfig.defaults, null, 4))
+    windows.forEach(win => {
+        characterStates[win.id].menu = null;
+        buildMenu(win);
+    });
 });
 
 /**
@@ -727,16 +796,16 @@ function updateTray() {
 
     try {
         const importPath = path.join(__dirname, '../imports/characters', 'config.json');
-        if(!fs.existsSync(importPath)){
-            fs.mkdirSync(path.join(__dirname, '../imports/characters'), {recursive: true})
-            fs.writeFileSync(importPath, "[]", {recursive: true})
+        if (!fs.existsSync(importPath)) {
+            fs.mkdirSync(path.join(__dirname, '../imports/characters'), { recursive: true })
+            fs.writeFileSync(importPath, "[]", { recursive: true })
         }
         importsConfig = JSON.parse(fs.readFileSync(importPath, 'utf8'));
         if (Object.keys(importsConfig).length) newImportedCharacterSubMenu = []
     } catch (err) {
         console.error('Error reading imports config file:', err);
-        if(!importsConfig)
-        importsConfig = []
+        if (!importsConfig)
+            importsConfig = []
     }
 
 
@@ -762,31 +831,31 @@ function updateTray() {
         });
     });
 
-    if(importsConfig)
-    importsConfig.forEach((character, i) => {
-        let icon = nativeImage.createFromPath(path.join(__dirname, character.icon ? '../imports/characters/' + character.icon : 'img/icons/custom.png'))
-        icon = icon.resize({ width: 16, height: 16, quality: "best" })
-        newImportedCharacterSubMenu.push({
-            label: character.name,
-            icon: icon,
-            type: 'normal',
-            click: () => createShimejiWindow({
-                characterName: character.name,
-                author: character.author,
-                spriteImage: character.sprite_path,
-                blinkImage: character.blink_path,
-                isCustomCharacter: true,
-                isImportedCharacter: true,
-                primaryColor: character.primary_color ?? undefined,
-                secondaryColor: character.secondary_color ?? undefined,
-                hueShift: character.hueShift ?? [0, 0, 0],
-                darknessOffset: character.darknessOffset ?? [0.85, 1.45, 1.60],
-                frameWidth: character.width ?? 36,
-                frameHeight: character.height ?? 52
-            })
+    if (importsConfig)
+        importsConfig.forEach((character, i) => {
+            let icon = nativeImage.createFromPath(path.join(__dirname, character.icon ? '../imports/characters/' + character.icon : 'img/icons/custom.png'))
+            icon = icon.resize({ width: 16, height: 16, quality: "best" })
+            newImportedCharacterSubMenu.push({
+                label: character.name,
+                icon: icon,
+                type: 'normal',
+                click: () => createShimejiWindow({
+                    characterName: character.name,
+                    author: character.author,
+                    spriteImage: character.sprite_path,
+                    blinkImage: character.blink_path,
+                    isCustomCharacter: true,
+                    isImportedCharacter: true,
+                    primaryColor: character.primary_color ?? undefined,
+                    secondaryColor: character.secondary_color ?? undefined,
+                    hueShift: character.hueShift ?? [0, 0, 0],
+                    darknessOffset: character.darknessOffset ?? [0.85, 1.45, 1.60],
+                    frameWidth: character.width ?? 36,
+                    frameHeight: character.height ?? 52
+                })
+            });
+            newCharacterSubMenu[0].submenu = newImportedCharacterSubMenu
         });
-        newCharacterSubMenu[0].submenu = newImportedCharacterSubMenu
-    });
     contextMenu = null;
     contextMenu = Menu.buildFromTemplate([
         {
@@ -897,6 +966,8 @@ function updateTray() {
                 currentIgnore = !currentIgnore;
                 windows.forEach(win => {
                     win.setIgnoreMouseEvents(currentIgnore);
+                    
+                    characterStates[win.id].lastEvent.sender.send('setTransparency', currentIgnore ? inactiveTransparency : transparency);
                     updateTray()
                 });
             }
@@ -1004,12 +1075,13 @@ function changeScale(scale) { // fix this // fix WHAT tanya??
  * Change a characters accessory
  * @param {string} name - Accessory name
  * @param {BrowserWindow} win - ENA window
+ * @param {boolean} [imported=false] - If it should use the import path or not
  */
-function changeAccessory(name, win) {
+function changeAccessory(name, win, imported = false) {
     const shimejiStates = characterStates[win.id];
     shimejiStates.accessory = name;
     if (shimejiStates.lastEvent) {
-        shimejiStates.lastEvent.sender.send('changeAccessory', name);
+        shimejiStates.lastEvent.sender.send('changeAccessory', name, imported, globalAccessoriesConfig);
     }
 }
 
@@ -1188,7 +1260,6 @@ function setCollision(win) {
                 })
             if (check && !characterStates[win.id].isFalling && characterStates[win.id].lastFloorY >= newDispY && floorSnapCheck(y, winHeight, newDispY)) {
                 win.setPosition(x + winWidth, newDispY - winHeight);
-                // console.log("Huh??")
                 floorSnapDone = true
             }
             else {
@@ -1215,7 +1286,7 @@ function setCollision(win) {
                 floorSnapDone = true
             }
             else {
-                characterStates[win.id].v_speed_x = Math.abs(characterStates[win.id].v_speed_x) * (characterStates[win.id].isBouncing || !characterStates[win.id].isFalling || bounciness);
+                characterStates[win.id].v_speed_x = Math.abs(characterStates[win.id].v_speed_x) * (characterStates[win.id].isBouncing || !characterStates[win.id].isFalling) * (!characterStates[win.id].isFalling || bounciness);
                 characterStates[win.id].direction = 'right';
                 characterStates[win.id].dx = ((characterStates[win.id].isBouncing || !characterStates[win.id].isFalling) * characterStates[win.id].scale * characterStates[win.id].speed * (!characterStates[win.id].isFalling || bounciness));
                 win.setPosition(characterStates[win.id].lastLeftWall, y);
@@ -1360,10 +1431,28 @@ function buildMenu(win) {
     if (win == undefined) { return; }
     if (characterStates[win.id] === undefined) { return; }
 
-    let config,
-        importsConfig,
+    let characterConfig,
+        accessoriesConfig = {},
+        importsAccessoriesConfig = {},
+        importsCharacterConfig,
         newImportedCharacterSubMenu = [
             { label: 'No one\'s here...', type: 'normal', enabled: false }
+        ],
+        newImportedAccessoriesSubMenu = [
+            { label: 'Nothing here...', type: 'normal', enabled: false }
+        ],
+        newAccessoriesSubMenu = [
+            {
+                label: 'Imported Accessories',
+                type: 'submenu',
+                submenu: newImportedAccessoriesSubMenu
+            },
+            {
+                label: 'None',
+                click: () => {
+                    changeAccessory('none', win);
+                }
+            }
         ],
         newCharacterSubMenu = [
             {
@@ -1388,23 +1477,45 @@ function buildMenu(win) {
                 })
             }
         ];
-
     try {
-        const configPath = path.join(__dirname, 'character', 'config.json');
-        config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+        const characterPath = path.join(__dirname, 'character', 'config.json');
+        characterConfig = JSON.parse(fs.readFileSync(characterPath, 'utf8'));
     } catch (err) {
         console.error('Error reading config file:', err);
     }
 
     try {
-        const importPath = path.join(__dirname, '../imports/characters', 'config.json');
-        importsConfig = JSON.parse(fs.readFileSync(importPath, 'utf8'));
-        if (Object.keys(importsConfig).length) newImportedCharacterSubMenu = []
+        const accessoryPath = path.join(__dirname, 'img/accessory', 'config.json');
+        accessoriesConfig = JSON.parse(fs.readFileSync(accessoryPath, 'utf8'));
+    } catch (err) {
+        console.error('Error reading accessory file:', err);
+    }
+
+    try {
+        const characterImportPath = path.join(__dirname, '../imports/characters', 'config.json');
+        importsCharacterConfig = JSON.parse(fs.readFileSync(characterImportPath, 'utf8'));
+        if (Object.keys(importsCharacterConfig).length) newImportedCharacterSubMenu = []
     } catch (err) {
         console.error('Error reading imports config file:', err);
     }
 
-    config.forEach((/** @type {object} */ character) => {
+    try {
+        const accessoryImportPath = path.join(__dirname, '../imports/accessories', 'config.json');
+        if (!fs.existsSync(accessoryImportPath)) {
+            fs.mkdirSync(path.join(__dirname, '../imports/accessories'), { recursive: true })
+            fs.writeFileSync(accessoryImportPath, "{}", { recursive: true })
+        }
+        importsAccessoriesConfig = JSON.parse(fs.readFileSync(accessoryImportPath, 'utf8'));
+        if (Object.keys(importsAccessoriesConfig).length) newImportedAccessoriesSubMenu = []
+    } catch (err) {
+        console.error('Error reading imports config file:', err);
+    }
+
+    globalAccessoriesConfig.defaults = accessoriesConfig
+    globalAccessoriesConfig.imports = importsAccessoriesConfig
+
+
+    characterConfig.forEach((/** @type {object} */ character) => {
         newCharacterSubMenu.push({
             label: character.name,
             icon: nativeImage.createFromPath(path.join(__dirname, 'img/icons/custom.png')),
@@ -1426,7 +1537,25 @@ function buildMenu(win) {
         });
     });
 
-    importsConfig.forEach((character, i) => {
+    for (let accessory in accessoriesConfig) {
+        newAccessoriesSubMenu.push({
+            label: accessoriesConfig[accessory].label || accessory,
+            click: () => {
+                changeAccessory(accessory, win);
+            }
+        });
+    }
+    for (let accessory in importsAccessoriesConfig) {
+        newImportedAccessoriesSubMenu.push({
+            label: importsAccessoriesConfig[accessory].label || accessory,
+            click: () => {
+                changeAccessory(accessory, win, true);
+            }
+        });
+    }
+    newAccessoriesSubMenu[0].submenu = newImportedAccessoriesSubMenu
+
+    importsCharacterConfig.forEach((character, i) => {
         let icon = nativeImage.createFromPath(path.join(__dirname, character.icon ? '../imports/characters/' + character.icon : 'img/icons/custom.png'))
         icon = icon.resize({ width: 16, height: 16, quality: "best" })
         newImportedCharacterSubMenu.push({
@@ -1548,128 +1677,7 @@ function buildMenu(win) {
         },
         {
             label: translations.addAccessory,
-            submenu: [
-                {
-                    label: 'None',
-                    click: () => {
-                        changeAccessory('none', win);
-                    }
-                },
-                {
-                    label: 'Ena Plushie',
-                    click: () => {
-                        changeAccessory('ena', win);
-                    }
-                },
-                {
-                    label: 'BBQ Ena Plushie',
-                    click: () => {
-                        changeAccessory('bbq_ena', win);
-                    }
-                },
-                {
-                    label: 'Shepherd Plushie',
-                    click: () => {
-                        changeAccessory('shepherd', win);
-                    }
-                },
-                {
-                    label: 'Margo Plushie',
-                    click: () => {
-                        changeAccessory('margo', win);
-                    }
-                },
-                {
-                    label: 'Ula Plushie',
-                    click: () => {
-                        changeAccessory('ula', win);
-                    }
-                },
-                {
-                    label: 'Hourglass Dog Plushie',
-                    click: () => {
-                        changeAccessory('hg_dog', win);
-                    }
-                },
-                {
-                    label: 'Turrón',
-                    click: () => {
-                        changeAccessory('turron', win);
-                    }
-                },
-                {
-                    label: 'Pumpkin Basket',
-                    click: () => {
-                        changeAccessory('pumpkin', win);
-                    }
-                },
-                {
-                    label: 'Ena Bunny Plushie',
-                    click: () => {
-                        changeAccessory('ena_bunny', win);
-                    }
-                },
-                {
-                    label: 'Clown Dog Plushie',
-                    click: () => {
-                        changeAccessory('clown_dog', win);
-                    }
-                },
-                {
-                    label: 'DogGrim Plushie',
-                    click: () => {
-                        changeAccessory('dog_grim', win);
-                    }
-                },
-                {
-                    label: 'Margo Kitty Plushie',
-                    click: () => {
-                        changeAccessory('margo_kitty', win);
-                    }
-                },
-                {
-                    label: 'Lollipop',
-                    click: () => {
-                        changeAccessory('lollipop', win);
-                    }
-                },
-                {
-                    label: 'Eve Hat',
-                    click: () => {
-                        changeAccessory('eve_hat', win);
-                    }
-                },
-                {
-                    label: 'BBQ Ena Bunny Plushie',
-                    click: () => {
-                        changeAccessory('bbq_bunny', win);
-                    }
-                },
-                {
-                    label: 'Phone Accessory',
-                    click: () => {
-                        changeAccessory('phone', win);
-                    }
-                },
-                {
-                    label: 'Leek Accessory',
-                    click: () => {
-                        changeAccessory('leek', win);
-                    }
-                },
-                {
-                    label: 'Baguette Accessory',
-                    click: () => {
-                        changeAccessory('baguette', win);
-                    }
-                },
-                {
-                    label: 'Kasane Pearto',
-                    click: () => {
-                        changeAccessory('pearto', win);
-                    }
-                }
-            ]
+            submenu: newAccessoriesSubMenu
         },
         {
             label: translations.newCharacter,
@@ -1773,8 +1781,8 @@ function createCharacterState(options) {
 
 /**
  * Load a save from a label
- * @param {string | null} saveLabel=null - Name of the save
- * @param {boolean} append=false - If true, doesn't remove any ENAs on screen
+ * @param {string | null} [saveLabel=null] - Name of the save. If null, loads favorite or regular ENA
+ * @param {boolean} [append=false] - If true, doesn't remove any ENAs on screen
  * @returns {Promise<void>}
  */
 async function loadSave(saveLabel = null, append = false) {

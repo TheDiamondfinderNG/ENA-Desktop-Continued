@@ -1,0 +1,80 @@
+{
+    "ena": {
+        "label": "Ena Plushie",
+        "path": "Ena_accessory.png"
+    },
+    "bbq_ena": {
+        "label": "BBQ Ena Plushie",
+        "path": "BBQEna_accessory.png"
+    },
+    "shepherd": {
+        "label": "Shepherd Plushie",
+        "path": "Shepherd_accessory.png"
+    },
+    "margo": {
+        "label": "Margo Plushie",
+        "path": "Margo_accessory.png"
+    },
+    "ula": {
+        "label": "Ula Plushie",
+        "path": "Ula_accessory.png"
+    },
+    "Phindoll Plushie": "Delphy_accessory.png",
+    "hg_dog": {
+        "label": "Hourglass Dog Plushie",
+        "path": "HourglassDog_accessory.png"
+    },
+    "turron": {
+        "label": "Turrón",
+        "path": "Turron_accessory.png"
+    },
+    "Turrón V2": "Turronv2_accessory.png",
+    "pumpkin": {
+        "label": "Pumpkin Basket",
+        "path": "Pumpkin_accessory.png"
+    },
+    "ena_bunny": {
+        "label": "Ena Bunny Plushie",
+        "path": "EnaBunny_accessory.png"
+    },
+    "clown_dog": {
+        "label": "Clown Dog Plushie",
+        "path": "ClownDog_accessory.png"
+    },
+    "dog_grim": {
+        "label": "DogGrim Plushie",
+        "path": "DogGrim_accessory.png"
+    },
+    "margo_kitty": {
+        "label": "Margo Kitty Plushie",
+        "path": "MargoKitty_accessory.png"
+    },
+    "lollipop": {
+        "label": "Lollipop",
+        "path": "Lollipop_accessory.png"
+    },
+    "eve_hat": {
+        "label": "Eve Hat",
+        "path": "pt_eveHat_accessory.png"
+    },
+    "bbq_bunny": {
+        "label": "BBQ Ena Bunny Plushie",
+        "path": "EnaBunnyBBQ_accessory.png"
+    },
+    "phone": {
+        "label": "Phone Accessory",
+        "path": "phone_accessory.png"
+    },
+    "leek": {
+        "label": "Leek Accessory",
+        "path": "leek_accessory.png"
+    },
+    "baguette": {
+        "label": "Baguette Accessory",
+        "path": "baguette_accessory.png"
+    },
+    "pearto": {
+        "label": "Kasane Pearto",
+        "path": "pearto_accessory.png"
+    }
+}

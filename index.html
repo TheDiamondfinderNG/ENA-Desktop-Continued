@@ -52,6 +52,7 @@
         let delta = deltaEnd - deltaStart
         let dragOffset = { x: 0, y: 0 };
         let touchOffset = null
+        let accessoryConfig = {}
 
         function getRandomNumber() {
             return Math.random() < 0.5 ? 1 : -1;
@@ -214,10 +215,32 @@
             animateUtils.setRecolor2(colors);
         });
 
-        window.api.receive('changeAccessory', (name) => {
-            if (name != null) {
-                animateUtils.setAccessory(name);
-            }
+        window.api.receive('changeAccessory', (name, imported, accessories) => {
+            let spritesheet = {}
+            accessoryConfig = accessories
+
+            for (let accessory in accessoryConfig.defaults)
+                if (!imageUtils.imgs[accessory])
+                    spritesheet[accessory] = "img/accessory/" + (typeof accessoryConfig.defaults[accessory] == "string" ? accessoryConfig.defaults[accessory] : accessoryConfig.defaults[accessory].path)
+            for (let accessory in accessoryConfig.imports)
+                if (!imageUtils.imgs[accessory])
+                    spritesheet[accessory] = "../imports/accessories/" + (typeof accessoryConfig.imports[accessory] == "string" ? accessoryConfig.imports[accessory] : accessoryConfig.imports[accessory].path)
+            let accessoryKeys = Object.keys(accessoryConfig.defaults)
+            accessoryKeys.push(...Object.keys(accessoryConfig.imports))
+            imageUtils.loadImages(spritesheet).then(() => {
+                let acc = {}
+                for (let key of accessoryKeys) {
+                    acc[key] = imageUtils.imgs[key]
+                }
+                animateUtils.saveAccessory(acc);
+
+                if (name != null) {
+                    animateUtils.setAccessory(name, imported);
+                }
+            })
+
+
+
         });
 
         window.api.receive('changeSprite', (sprite, blink) => {
@@ -225,25 +248,6 @@
             let spritesheet = {
                 character: (isCustom ? imgPath + (isImport ? "/../../imports/characters" : "") + '\\' + sprite : 'img/character/' + sprite),
                 eyes: (isCustom ? imgPath + (isImport ? "/../../imports/characters" : "") + '\\' + blink : 'img/character/' + blink),
-                ena: 'img/accessory/Ena_accessory.png',
-                bbq_ena: 'img/accessory/BBQEna_accessory.png',
-                shepherd: 'img/accessory/Shepherd_accessory.png',
-                margo: 'img/accessory/Margo_accessory.png',
-                ula: 'img/accessory/Ula_accessory.png',
-                hg_dog: 'img/accessory/HourglassDog_accessory.png',
-                turron: 'img/accessory/Turron_accessory.png',
-                pumpkin: 'img/accessory/Pumpkin_accessory.png',
-                ena_bunny: 'img/accessory/EnaBunny_accessory.png',
-                clown_dog: 'img/accessory/ClownDog_accessory.png',
-                dog_grim: 'img/accessory/DogGrim_accessory.png',
-                margo_kitty: 'img/accessory/MargoKitty_accessory.png',
-                lollipop: 'img/accessory/Lollipop_accessory.png',
-                eve_hat: 'img/accessory/pt_eveHat_accessory.png',
-                bbq_bunny: 'img/accessory/EnaBunnyBBQ_accessory.png',
-                phone: 'img/accessory/phone_accessory.png',
-                leek: 'img/accessory/leek_accessory.png',
-                baguette: 'img/accessory/baguette_accessory.png',
-                pearto: 'img/accessory/pearto_accessory.png'
             };
 
             // Sprites and more
@@ -304,28 +308,6 @@
                 const frameHeight = imgs.character.height / 4;
 
                 animateUtils.createCharacter(imgs.character, imgs.eyes, name, 0, 0, frameWidth, frameHeight, 'idle-' + direction, options, isCustom, 'db/');
-                var acc = {
-                    ena: imgs.ena,
-                    bbq_ena: imgs.bbq_ena,
-                    shepherd: imgs.shepherd,
-                    margo: imgs.margo,
-                    ula: imgs.ula,
-                    hg_dog: imgs.hg_dog,
-                    turron: imgs.turron,
-                    pumpkin: imgs.pumpkin,
-                    ena_bunny: imgs.ena_bunny,
-                    clown_dog: imgs.clown_dog,
-                    dog_grim: imgs.dog_grim,
-                    margo_kitty: imgs.margo_kitty,
-                    lollipop: imgs.lollipop,
-                    eve_hat: imgs.eve_hat,
-                    bbq_bunny: imgs.bbq_bunny,
-                    phone: imgs.phone,
-                    leek: imgs.leek,
-                    baguette: imgs.baguette,
-                    pearto: imgs.pearto
-                };
-                animateUtils.saveAccessory(acc);
                 animateUtils.initCanvas('body', frameWidth * animateUtils.scale, frameHeight * animateUtils.scale, 'shimeji');
                 animateUtils.onInit();
                 window.api.send('direction', direction);

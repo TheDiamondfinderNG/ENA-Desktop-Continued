@@ -129,7 +129,7 @@
 																<hr>
 																<div class="row form-group">
 																	<label class="col-sm-4 col-form-label"
-																		title="Keep ENAs in the monitor they're in until dragged to a different pne">
+																		title="Keep ENAs in the monitor they're in until dragged to a different one">
 																		Monitor lock
 																	</label>
 																	<div class="col-sm-8">
@@ -229,8 +229,9 @@
 																					id="decayrange"
 																					style="background-size: 0% 100%;">
 																			</slider-bar><br />
-																			<div class="warning" style="display: none;">
-																				&nbsp;WARNING: Having the pet decay at 0
+																			<div class="warning box-warning"
+																				style="display: none;">
+																				WARNING: Having the pet decay at 0
 																				will result in you having to pick up
 																				ENAs to reset them.
 																			</div>
@@ -256,8 +257,9 @@
 																				id="bouncinessrange"
 																				style="background-size: 0% 100%;">
 																		</slider-bar><br />
-																		<div class="warning" style="display: none;">
-																			&nbsp;WARNING: A bounciness of more than
+																		<div class="warning box-warning"
+																			style="display: none;">
+																			WARNING: A bounciness of more than
 																			100% will cause ENA to gain speed and have
 																			unexpected behavior
 																			<!-- I put this warning after the comment in physics.js so I did lie a bit here -->
@@ -283,8 +285,31 @@
 																				id="transparencyrange"
 																				style="background-size: 0% 100%;">
 																		</slider-bar><br />
-																		<div class="warning" style="display: none;">
-																			&nbsp;WARNING: They are invisible. </div>
+																		<div class="warning box-warning"
+																			style="display: none;">
+																			WARNING: They are invisible. </div>
+																	</div>
+																	<label class="col-sm-4 col-form-label"
+																		title="How transparent the ENAs are when inactive">
+																		Inactive Opacity
+																	</label>
+																	<div class="col-sm-8">
+																		<input type="number" pattern="[0-9]*"
+																			value="100" maxlength="3"
+																			class="form-control form-control-sm ms-1 ng-pristine ng-valid ng-touched"
+																			oninput="inactivetransparencyrange.value=value"
+																			id="inactivetransparencynumber" step="1"
+																			min="0" max="Infinity">
+																		<slider-bar>
+																			<input class="flex-grow-1" type="range"
+																				min="0" max="100" value="100"
+																				oninput="inactivetransparencynumber.value=value"
+																				id="inactivetransparencyrange"
+																				style="background-size: 0% 100%;">
+																		</slider-bar><br />
+																		<div class="warning box-warning"
+																			style="display: none;">
+																			WARNING: They are invisible, which in itself isn't a bad thing when disabled. Hiding them would be more resource friendly </div>
 																	</div>
 																</div>
 															</div>
@@ -315,7 +340,8 @@
 																<a target="_blank" class="custom-link"
 																	href="https://gitlab.com/TheDiamondfinderNG/ena-desktop-continued/-/wikis/creating-characters">How
 																	to make a custom character</a>
-																<a target="_blank" class="custom-link" style="border: solid #555; border-width: 0px 1px; padding: 0 0.5em; margin: 0 0.5em"
+																<a target="_blank" class="custom-link"
+																	style="border: solid #555; border-width: 0px 1px; padding: 0 0.5em; margin: 0 0.5em"
 																	href="https://gitlab.com/TheDiamondfinderNG/ena-desktop-continued/-/wikis/legacy-transfer">How
 																	to port legacy custom characters</a>
 																<a target="_blank" class="custom-link"
@@ -347,13 +373,26 @@
 																			Template</button>
 																		<button class="btn btn-lg btn-default btn-dark"
 																			onclick="shell.openPath(spriteLocation+'config.json')">Open
-																			character config</button>
+																			Character config</button>
 																	</span>
 
 																	<h1 id="no-ena-message"></h1>
 																</div>
 																<div class="tab-contents" id="imported-accessories">
-																	<h1>WIP ¯\_(ツ)_/¯</h1>
+																	<span class="btn-group">
+																		<button class="btn btn-lg btn-default btn-dark"
+																			onclick="updateSlots(); ipcRenderer.send('update-menus')">
+																			Reload Config
+																		</button>
+																		<button class="btn btn-lg btn-default btn-dark"
+																			onclick="zipTemplateExport(true)">Download
+																			Accessory
+																			Template</button>
+																		<button class="btn btn-lg btn-default btn-dark"
+																			onclick="shell.openPath(accessoryLocation+'config.json')">Open
+																			Accessory config</button>
+																	</span>
+																	<h1 id="no-accessory-message"></h1>
 																</div>
 															</div>
 														</main>
@@ -361,7 +400,8 @@
 															<div class="tinyface"></div>
 														</div>
 														<footer class="text-muted text-nowrap">
-															<div class="app-version">version <b class="me-2">v1.1.0 PRERELEASE (30cd193)
+															<div class="app-version">version <b class="me-2">v1.1.0
+																	BETA (build 1)
 																	<strong>(Community Continued)</strong></b></div>
 															<div class="text-end">
 																<div class="d-flex flex-wrap">
@@ -406,6 +446,7 @@
 			petDecay = document.querySelector("#decaynumber"),
 			bounciness = document.querySelector("#bouncinessnumber"),
 			transparency = document.querySelector("#transparencynumber"),
+			inactiveTransparency = document.querySelector("#inactivetransparencynumber"),
 			fileUpload = document.querySelector("#file"),
 			importBox = fileUpload.labels[0]
 		function initValues() {
@@ -417,15 +458,18 @@
 			petDecay.value = ipcRenderer.sendSync("get-pet-decay") * 10
 			bounciness.value = ipcRenderer.sendSync("get-bounciness") * 100
 			transparency.value = ipcRenderer.sendSync("get-transparency") * 100
+			inactiveTransparency.value = ipcRenderer.sendSync("get-inactive-transparency") * 100
 			document.querySelector("#strengthrange").value = petStrength.value
 			document.querySelector("#decayrange").value = petDecay.value
 			document.querySelector("#bouncinessrange").value = bounciness.value
 			document.querySelector("#transparencyrange").value = transparency.value
+			document.querySelector("#inactivetransparencyrange").value = inactiveTransparency.value
 			document.querySelector("#monitor").style.display = ipcRenderer.sendSync("get-displays").length > 1 ? "initial" : "none"
 			document.querySelector("#pet-decay-wrapper").style.display = petStrength.value > 0 ? "contents" : "none"
-			petDecay.parentElement.querySelector(".warning").style.display = petDecay.value > 0 ? "none" : "initial"
-			bounciness.parentElement.querySelector(".warning").style.display = bounciness.value > 100 ? "initial" : "none"
-			transparency.parentElement.querySelector(".warning").style.display = transparency.value > 0 ? "none" : "initial"
+			petDecay.parentElement.querySelector(".box-warning").style.display = petDecay.value > 0 ? "none" : "initial"
+			bounciness.parentElement.querySelector(".box-warning").style.display = bounciness.value > 100 ? "initial" : "none"
+			transparency.parentElement.querySelector(".box-warning").style.display = transparency.value > 0 ? "none" : "initial"
+			inactiveTransparency.parentElement.querySelector(".box-warning").style.display = inactiveTransparency.value > 0 ? "none" : "initial"
 			document.querySelector("#floor-lock-dist-wrapper").style.display = floorLock.value == 1 ? "contents" : "none"
 		}
 
@@ -437,6 +481,7 @@
 			ipcRenderer.send("update-pet-decay", petDecay.value / 10)
 			ipcRenderer.send("update-bounciness", bounciness.value / 100)
 			ipcRenderer.send("update-transparency", transparency.value / 100)
+			ipcRenderer.send("update-inactive-transparency", inactiveTransparency.value / 100)
 		}
 
 		function saveValues() {
@@ -475,6 +520,12 @@
 		}
 		document.querySelector("#transparencyrange").onchange = () => {
 			transparency.parentElement.querySelector(".warning").style.display = transparency.value == 0 ? "initial" : "none"
+		}
+		inactiveTransparency.onchange = () => {
+			inactiveTransparency.parentElement.querySelector(".warning").style.display = inactiveTransparency.value == 0 ? "initial" : "none"
+		}
+		document.querySelector("#inactivetransparencyrange").onchange = () => {
+			inactiveTransparency.parentElement.querySelector(".warning").style.display = inactiveTransparency.value == 0 ? "initial" : "none"
 		}
 		document.querySelector("main").onchange = (e) => {
 			if (!e.target.matches(".settings-section *")) return
@@ -526,33 +577,82 @@
 			fileUpload.value = ""
 		})
 
-		function checkDupes(chars, config) {
+		function checkCharacterDupes(chars, config) {
 			let failed = false, toRemove = null
-			for (let character in chars) {
+			for (let character = 0, length = chars.length; character < length; character++) {
 				if (chars[character].name == config.name) {
-					let sourceAuthor = chars[character].author || "uncredited"
-					let newAuthor = config.author || "uncredited"
+					let sourceAuthor = (config.author ? chars[character].author.name || chars[character].author : "uncredited").replace(/\n/g, " ")
+					let newAuthor = (config.author ? config.author.name || config.author : "uncredited").replace(/"\n"/g, " ")
 					if ((sourceAuthor.name || sourceAuthor) == (newAuthor.name || newAuthor)) {
 						if (!confirm(`It looks like you're trying to import an already existing character (${chars[character].name} by ${(sourceAuthor.name || sourceAuthor)}), would you like to continue? (This will override the current copy)`)) {
 							console.error("User canceled import")
 							failed = true
-							break
+							continue
 						}
 						toRemove = character
 					}
 					else if (!confirm(`It looks like you're trying to import an already existing character (${chars[character].name}) with a different author (${(sourceAuthor.name || sourceAuthor)} instead of ${(config.author.name || config.author)}), would you like to continue? (the character will include this authors name at the end)`)) {
 						console.error("User canceled import")
 						failed = true
-						break
+						toRemove = character
+						continue
 					}
 					else {
 						config.name += ` (${(newAuthor.name || newAuthor)})`
+						if (config.sprite_path == chars[character].sprite_path)
+							config.sprite_path = `(${(newAuthor.name || newAuthor)}) ${config.sprite_path}`
+						if (config.blink_path == chars[character].blink_path)
+							config.blink_path = `(${(newAuthor.name || newAuthor)}) ${config.blink_path}`
+						if (config.icon == chars[character].icon)
+							config.icon = `(${(newAuthor.name || newAuthor)}) ${config.icon}`
+						character = -1
 					}
 				}
 			}
 			return { value: config, continue: !failed, toRemove: toRemove }
 		}
 
+		/**
+		 * Description
+		 * @param {object} accessories
+		 * @param {object} config
+		 * @param {string} key
+		 * @returns object{ value: {object}, continue: boolean, toRemove: string }
+		 */
+		function checkAccessoryDupes(accessories, config, key) {
+			let failed = false, toRemove = null;
+			let redo = true
+			while (redo)
+				for (let accessory in accessories) {
+					console.log(accessory, key)
+					redo = false
+					if (accessory == key) {
+						let sourceAuthor = (config.author ? accessories[accessory].author.name || accessories[accessory].author : "uncredited").replace(/\n/g, " ")
+						let newAuthor = (config.author ? config.author.name || config.author : "uncredited").replace(/"\n"/g, " ")
+						if ((sourceAuthor.name || sourceAuthor) == (newAuthor.name || newAuthor)) {
+							if (!confirm(`It looks like you're trying to import an already existing character (${accessory} by ${(sourceAuthor.name || sourceAuthor)}), would you like to continue? (This will override the current copy)`)) {
+								console.error("User canceled import")
+								failed = true
+								continue
+							}
+							toRemove = key
+						}
+						else if (!confirm(`It looks like you're trying to import an already existing character (${accessory}) with a different author (${(sourceAuthor.name || sourceAuthor)} instead of ${(config.author.name || config.author)}), would you like to continue? (the character will include this authors name at the end)`)) {
+							console.error("User canceled import")
+							failed = true
+							toRemove = key
+							continue
+						}
+						else {
+							key += ` (${(newAuthor.name || newAuthor)})`
+							if (config.path == accessories[accessory].path)
+								config.path = `(${(newAuthor.name || newAuthor)}) ${config.path}`
+							redo = true
+						}
+					}
+				}
+			return { value: config, continue: !failed, toRemove: toRemove, newKey: key }
+		}
 		function dropHandler(e) {
 			e.preventDefault();
 			const files = [...e.dataTransfer.items]
@@ -562,35 +662,49 @@
 			uploadHandler(fileList)
 		}
 
-		let tempConfig
+		let tempConfig, tempAccessories
 		async function uploadHandler(files) {
 			const lastUploaded = importBox.querySelector("h4")
 			let fileNames = []
 			let filePaths = []
 			tempConfig = fs.existsSync("../imports/characters/config.json") ? JSON.parse(fs.readFileSync("../imports/characters/config.json")) : []
+			tempAccessories = fs.existsSync("../imports/accessories/config.json") ? JSON.parse(fs.readFileSync("../imports/accessories/config.json")) : {}
 
 			for (let file of files) {
 				fileNames.push(file.name)
 				filePaths.push(file.path)
 			}
-			console.time()
+			console.time("Importing")
 			filePaths.forEach(async (path, i) => {
 				await zipImport(path)
 			});
-			console.timeEnd()
+			console.timeEnd("Importing")
 			lastUploaded.innerText = "Last Uploaded: " + fileNames.join(", ")
 		}
 
 		function alphabetSort(a, b) {
-			let lowercaseNameA = a.name.toLowerCase()
-			let lowercaseNameB = b.name.toLowerCase()
+			let lowercaseNameA = (a.name || a).toLowerCase()
+			let lowercaseNameB = (b.name || b).toLowerCase()
 			// Specific outliers for manual sorting
 			if ("!@$^*".includes(lowercaseNameA[0]) && !"!@$^*".includes(lowercaseNameB[0])) return 1
 			else if (!"!@$^*".includes(lowercaseNameA[0]) && "!@$^*".includes(lowercaseNameB[0])) return -1
 			return lowercaseNameA > lowercaseNameB ? 1 : (lowercaseNameA < lowercaseNameB ? -1 : 0)
 		}
 
-		function zipExport(spritePath = spriteLocation, character = character) {
+		function accessoryZipExport(path, accessory, name) {
+			let accessoryZip = new JSzip()
+			let spriteData = new Uint8Array(fs.readFileSync(accessoryLocation + (accessory.path || accessory)))
+			let accessoryObject = {}
+			accessoryObject[name] = accessory
+			accessoryZip.file("accessories.json", JSON.stringify(accessoryObject, null, 4))
+			accessoryZip.file(accessory.path || accessory, spriteData)
+
+			accessoryZip.generateAsync({ type: "base64" }).then(function (base64) {
+				location.href = "data:application/zip;base64," + base64;
+			});
+		}
+
+		function characterZipExport(spritePath = spriteLocation, character = character) {
 			let characterZip = new JSzip()
 			characterZip.file("config.json", JSON.stringify(character, null, 4))
 			let spriteData = new Uint8Array(fs.readFileSync(spritePath + character.sprite_path))
@@ -607,33 +721,43 @@
 			});
 		}
 
-		function zipTemplateExport() {
-			let characterZip = new JSzip()
-			let character = {
-				"name": "ENA",
-				"sprite_path": "ENA/ena_default.png",
-				"blink_path": "ENA/ena_blink.png",
-				"icon": "ENA/ena_icon.png",
-				"width": 36,
-				"height": 52,
-				"primary_color": "#2c5bf5",
-				"secondary_color": "#ffe308",
-				"author": {
-					"name": "Namity",
-					"color": 3
+		function zipTemplateExport(isAccessory = false) {
+			let exportZip = new JSzip()
+			if (isAccessory) {
+				let accessory = {
+					"Boring color blocks": {
+						"path": "color_blocks.png",
+						"author": "DiamondNG"
+					}
 				}
+				exportZip.file("accessories.json", JSON.stringify(accessory, null, 4))
+				exportZip.file(accessory["Boring color blocks"].path, new Uint8Array(Buffer.from("iVBORw0KGgoAAAANSUhEUgAAACgAAAAuBAMAAACoiUZDAAAAD1BMVEUeADAA//8Aubn/AP+5ALkkvW1TAAAAjUlEQVQoz+2NsQ3FMAhEzzYDxBtYTBCJBVKw/0w57G+6nyJ1Doni6XEALafkwGCNOQ0dvTBHRyPChIUIC1qmZ+J8NpqtvrI7YSdNdB4ScYfVJgzneOj84GsIvwQi4g4dFbVWVSCQwwkDKXRC2Satn+kZzbAzCiDrfNkBOZfPRxp47EcBwxk0x5/OD76FN+bsgARt8NVpAAAAAElFTkSuQmCC", "base64")))
+			} else {
+				let character = {
+					"name": "ENA",
+					"sprite_path": "ENA/ena_default.png",
+					"blink_path": "ENA/ena_blink.png",
+					"icon": "ENA/ena_icon.png",
+					"width": 36,
+					"height": 52,
+					"primary_color": "#2c5bf5",
+					"secondary_color": "#ffe308",
+					"author": {
+						"name": "Namity",
+						"color": 3
+					}
+				}
+				exportZip.file("config.json", JSON.stringify(character, null, 4))
+				let spriteData = new Uint8Array(fs.readFileSync(path.join(__dirname, "img/character/ena_default.png")))
+				let blinkData = new Uint8Array(fs.readFileSync(path.join(__dirname, "img/character/ena_blink.png")))
+				let iconData = new Uint8Array(fs.readFileSync(path.join(__dirname, "img/icons/ena.png")))
+
+
+				exportZip.file(character.sprite_path, spriteData)
+				exportZip.file(character.blink_path, blinkData)
+				exportZip.file(character.icon, iconData)
 			}
-			characterZip.file("config.json", JSON.stringify(character, null, 4))
-			let spriteData = new Uint8Array(fs.readFileSync(path.join(__dirname, "img/character/ena_default.png")))
-			let blinkData = new Uint8Array(fs.readFileSync(path.join(__dirname, "img/character/ena_blink.png")))
-			let iconData = new Uint8Array(fs.readFileSync(path.join(__dirname, "img/icons/ena.png")))
-
-
-			characterZip.file(character.sprite_path, spriteData)
-			characterZip.file(character.blink_path, blinkData)
-			characterZip.file(character.icon, iconData)
-
-			characterZip.generateAsync({ type: "base64" }).then(function (base64) {
+			exportZip.generateAsync({ type: "base64" }).then(function (base64) {
 				location.href = "data:application/zip;base64," + base64;
 			});
 		}
@@ -647,37 +771,126 @@
 				.then(
 					async function (zip) {
 						let zipFiles = zip.files
-						let fileConfig = JSON.parse(Buffer.from(await (await zipFiles["config.json"].async("blob")).arrayBuffer()).toString())
+						let accessoryConfig
+						if (zipFiles["accessories.json"]) {
+							accessoryConfig = JSON.parse(Buffer.from(await (await zipFiles["accessories.json"].async("blob")).arrayBuffer()).toString())
+							console.log("ACCESSORIES", tempAccessories)
+							for (let accessory in accessoryConfig) {
+								let accessoryValue = accessoryConfig[accessory]
+								let oldAccessoryValue = { ...accessoryValue }
+								let originalPath = accessory.path || accessory,
+									dupeCheckResults = checkAccessoryDupes(tempAccessories, accessoryValue, accessory)
+								if (dupeCheckResults.newKey != accessory) {
+									console.log(dupeCheckResults.value)
+									zipFiles[dupeCheckResults.value.path || dupeCheckResults.value] = zipFiles[oldAccessoryValue.path || oldAccessoryValue]
+									zipFiles[dupeCheckResults.value.path || dupeCheckResults.value].name = dupeCheckResults.value.path || dupeCheckResults.value
+									delete zipFiles[oldAccessoryValue.path || oldAccessoryValue]
+									accessory = dupeCheckResults.newKey
+									accessoryValue = dupeCheckResults.value
+								}
+								if (dupeCheckResults.continue) {
+									tempAccessories[accessory] = accessoryValue
+								}
+								let filePath = path.join(accessoryLocation, accessoryValue.path || accessoryValue)
+								if (zipFiles[accessoryValue.path || accessoryValue].dir) {
+									try {
+										fs.mkdirSync(filePath)
+									} catch (err) { console.warn(err) }
+								}
+								console.log(zipFiles[accessoryValue.path || accessoryValue])
+								zipFiles[accessoryValue.path || accessoryValue].async("blob")
+									.then(x => x.arrayBuffer())
+									.then(async fileBuffer => {
+										let destPath = path.dirname(filePath)
+										fs.writeFileSync(filePath, Buffer.from(fileBuffer))
+										ipcRenderer.send("update-menus")
+									})
+								delete zipFiles[accessoryValue.path || accessoryValue]
+							}
+							fs.writeFileSync("../imports/accessories/config.json", JSON.stringify(tempAccessories, null, 4))
+							delete zipFiles["accessories.json"]
+						}
 						if (zipFiles["config.json"]) {
+							let characterConfig = JSON.parse(Buffer.from(await (await zipFiles["config.json"].async("blob")).arrayBuffer()).toString())
 							// Check if config is an array
-							if (typeof fileConfig.length != "undefined") {
-								for (let character of fileConfig) {
-									let result = checkDupes(tempConfig, character)
-									if (!result.continue) {
-										delete zipFiles[character.sprite_path]
-										delete zipFiles[character.blink_path]
+							if (typeof characterConfig.length != "undefined") {
+								for (let character of characterConfig) {
+									let { sprite_path, blink_path, icon } = character
+									let dupeCheckResults = checkCharacterDupes(tempConfig, character)
+									if (!dupeCheckResults.continue) {
+										delete zipFiles[sprite_path]
+										delete zipFiles[blink_path]
+										delete zipFiles[icon]
 										continue
 									}
-									if (result.toRemove != null)
-										tempConfig.splice(result.toRemove, 1)
-									character = result.value
+									if (sprite_path != dupeCheckResults.value.sprite_path) {
+										zipFiles[dupeCheckResults.value.sprite_path] = zipFiles[sprite_path]
+										if (zipFiles[path.parse(sprite_path).dir + "/"]) {
+											zipFiles[path.parse(dupeCheckResults.value.sprite_path).dir + "/"] = zipFiles[path.parse(sprite_path).dir + "/"]
+											delete zipFiles[path.parse(sprite_path).dir + "/"]
+										}
+										delete zipFiles[sprite_path]
+									}
+									if (blink_path != dupeCheckResults.value.blink_path) {
+										zipFiles[dupeCheckResults.value.blink_path] = zipFiles[blink_path]
+										if (zipFiles[path.parse(blink_path).dir + "/"]) {
+											zipFiles[path.parse(dupeCheckResults.value.blink_path).dir + "/"] = zipFiles[path.parse(blink_path).dir + "/"]
+											delete zipFiles[path.parse(blink_path).dir + "/"]
+										}
+										delete zipFiles[blink_path]
+									}
+									if (icon != dupeCheckResults.value.icon) {
+										zipFiles[dupeCheckResults.value.icon] = zipFiles[icon]
+										if (zipFiles[path.parse(icon).dir + "/"]) {
+											zipFiles[path.parse(dupeCheckResults.value.icon).dir + "/"] = zipFiles[path.parse(icon).dir + "/"]
+											delete zipFiles[path.parse(icon).dir + "/"]
+										}
+										delete zipFiles[icon]
+									}
+									character = dupeCheckResults.value
 									tempConfig.unshift(character)
 								}
 								tempConfig.sort(alphabetSort)
 								fs.writeFileSync("../imports/characters/config.json", JSON.stringify(tempConfig, null, 4))
 							} else {
-								let result = checkDupes(tempConfig, fileConfig)
+								let { sprite_path, blink_path, icon } = characterConfig
+								let result = checkCharacterDupes(tempConfig, characterConfig)
 								if (!result.continue) return
 								if (result.toRemove != null)
 									tempConfig.splice(result.toRemove, 1)
-								fileConfig = result.value
-								tempConfig.unshift(fileConfig)
+
+								if (sprite_path != result.value.sprite_path) {
+									zipFiles[result.value.sprite_path] = zipFiles[sprite_path]
+									if (zipFiles[path.parse(sprite_path).dir + "/"]) {
+										zipFiles[path.parse(result.value.sprite_path).dir + "/"] = zipFiles[path.parse(sprite_path).dir + "/"]
+										delete zipFiles[path.parse(sprite_path).dir + "/"]
+									}
+									delete zipFiles[sprite_path]
+								}
+								if (blink_path != result.value.blink_path) {
+									zipFiles[result.value.blink_path] = zipFiles[blink_path]
+									if (zipFiles[path.parse(blink_path).dir + "/"]) {
+										zipFiles[path.parse(result.value.blink_path).dir + "/"] = zipFiles[path.parse(blink_path).dir + "/"]
+										delete zipFiles[path.parse(blink_path).dir + "/"]
+									}
+									delete zipFiles[blink_path]
+								}
+								if (icon != result.value.icon) {
+									zipFiles[result.value.icon] = zipFiles[icon]
+									if (zipFiles[path.parse(icon).dir + "/"]) {
+										zipFiles[path.parse(result.value.icon).dir + "/"] = zipFiles[path.parse(icon).dir + "/"]
+										delete zipFiles[path.parse(icon).dir + "/"]
+									}
+									delete zipFiles[icon]
+								}
+								characterConfig = result.value
+								tempConfig.unshift(characterConfig)
 								tempConfig.sort(alphabetSort)
 								fs.writeFileSync("../imports/characters/config.json", JSON.stringify(tempConfig, null, 4))
 							}
 							delete zipFiles["config.json"]
-						} else {
-							alert("ERROR: The file is missing a config.json")
+						} else if (!accessoryConfig) {
+							alert("ERROR: The file is missing a config.json or accessory.json")
 							return
 						}
 						for (let file in zipFiles) {
@@ -697,17 +910,25 @@
 								})
 						}
 					}).catch((err) => { alert(err); throw err })
-
 		}
-
+		let tanyaUnlocked = JSON.parse(fs.readFileSync(path.join(__dirname, "img/accessory/config.json")))["Tanya accessory!"]
 		function filterCustoms(value) {
-			let anyEnasLeft = false
-			document.getElementById("imported-characters").childNodes.forEach(slot => {
+			let anyEnasLeft = false, anyAccessoriesLeft = false
+			// This seems important
+			let secretCodeFound = value.split("").map(c => c.charCodeAt().toString(33)).join(" ") === "27 1r 1i 2i 1w 2c 2n 1w"
+			function slotSearch(slot, isEnas = true) {
 				if (!slot.querySelector || !slot.querySelector(".label")) return false
 				if (!value.trim()) {
 					slot.style.display = ""
-					anyEnasLeft = true
-					return false
+					if (isEnas)
+						anyEnasLeft = true
+					else anyAccessoriesLeft = true
+					return
+				}
+				if (secretCodeFound) {
+					slot.style.display = "none"
+					return
+
 				}
 
 				let labelText = slot.querySelector(".label").innerText.toLowerCase();
@@ -725,15 +946,28 @@
 				}
 				if (accurateLetters / checkedLetters > 0.7) {
 					slot.style.display = ""
-					anyEnasLeft = true
+					if (isEnas)
+						anyEnasLeft = true
+					else anyAccessoriesLeft = true
 				} else {
 					slot.style.display = "none"
 				}
-			});
-			if (document.getElementById("no-ena-message").style.display == "none") {
+			}
+
+			document.getElementById("imported-characters").childNodes.forEach(slot => slotSearch(slot, true));
+			document.getElementById("imported-accessories").childNodes.forEach(slot => slotSearch(slot, false));
+			if (document.getElementById("no-ena-message").style.display == "none" && document.getElementById("no-accessory-message").style.display == "none") {
 				noEnaMessageSet()
 			}
+
+			if (secretCodeFound) {
+				document.getElementById("no-ena-message").innerHTML = tanyaUnlocked ? "I know already -w-` (You've already unlocked this silly :P)" : "So do I!! (Check your accessories ;D)"
+				document.getElementById("no-accessory-message").innerHTML = tanyaUnlocked ? "I know already -w-` (You've already unlocked this silly :P)" : "So do I!! (Check your accessories ;D)"
+				ipcRenderer.send("unlockTanya")
+				tanyaUnlocked = true
+			}
 			document.getElementById("no-ena-message").style.display = anyEnasLeft ? "none" : ""
+			document.getElementById("no-accessory-message").style.display = anyAccessoriesLeft ? "none" : ""
 		}
 
 		let authorColors = ['#ffffff', '#ffffff', '#f86754', '#f8b454', '#f8ea54', '#79ff72', '#6985ff', '#a06dff', '#fd87ff', '#77faff', '#959595', '#959595', '#942314', '#985a02', '#8e8200', '#08a300', '#001c99', '#300089', '#9f00a2', '#007b80', '#1f1f1f', '#1f1f1f', '#ff0000', '#ff8400', '#ffff00', '#00ff00', '#0000ff', '#6a00ff', '#ff00ff', '#00ffff']
@@ -741,9 +975,10 @@
 		let characterSlotTemplate = `<div class="btn btn-dark import-slot">
 								<canvas width="100" height="100"></canvas>
 								<span class="label">
-									<span>Stupid ENA</span>
-									<h6>by TheDiamondfinderNG</h6>
+									<span></span>
+									<h6></h6>
 								</span>
+								<div class="character-alerts"></div>
 								<span class="btn-group">
 									<button aria-label="Download"
 										class="btn btn-info download-button"
@@ -781,7 +1016,7 @@
 									</button>
 									<button aria-label="Delete ENA"
 										class="btn btn-danger remove-button"
-										title="Deletes the save. Shift+Click to skip confirmation">
+										title="Deletes the ENA">
 										<fa-icon class="ng-fa-icon">
 											<svg role="img" aria-hidden="true"
 												focusable="false"
@@ -799,11 +1034,78 @@
 								</span>
 							</div>`
 
+		let accessorySlotTemplate = `<div class="btn btn-dark accessory-slot">
+										<span class="warning accessory-errors-wrapper">
+											<div class="accessory-errors">
+											</div>
+										</span>
+										<span class="label">
+											<span></span>
+											<h6>by </h6>
+										</span>
+										<canvas width="100" height="100"></canvas>
+										<div class="character-alerts"></div>
+										<span class="btn-group">
+											<button aria-label="Download"
+												class="btn btn-info download-button"
+												title="Downloads the accessory zip for easy sharing">
+												<fa-icon class="ng-fa-icon">
+													<svg role="img" aria-hidden="true"
+														focusable="false"
+														data-prefix="fas"
+														data-icon="arrow-down"
+														class="svg-inline--fa fa-arrow-down fa-fw"
+														xmlns="http://www.w3.org/2000/svg"
+														viewBox="0 0 384 512">
+														<path fill="currentColor"
+															d="M169.4 502.6c12.5 12.5 32.8 12.5 45.3 0l160-160c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L224 402.7 224 32c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 370.7-105.4-105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l160 160z">
+														</path>
+													</svg>
+												</fa-icon>
+											</button>
+											<button aria-label="Open Location"
+												class="btn btn-info open-button"
+												title="Open sprite in directory">
+												<fa-icon class="ng-fa-icon">
+													<svg role="img" aria-hidden="true"
+														focusable="false"
+														data-prefix="fas"
+														data-icon="arrow-down"
+														class="svg-inline--fa fa-arrow-down fa-fw"
+														xmlns="http://www.w3.org/2000/svg"
+														viewBox="0 0 512 512">
+														<path fill="currentColor"
+															d="M64 448l384 0c35.3 0 64-28.7 64-64l0-240c0-35.3-28.7-64-64-64L298.7 80c-6.9 0-13.7-2.2-19.2-6.4L241.1 44.8C230 36.5 216.5 32 202.7 32L64 32C28.7 32 0 60.7 0 96L0 384c0 35.3 28.7 64 64 64z">
+														</path>
+													</svg>
+												</fa-icon>
+											</button>
+											<button aria-label="Delete ENA"
+												class="btn btn-danger remove-button"
+												title="Deletes the accessory">
+												<fa-icon class="ng-fa-icon">
+													<svg role="img" aria-hidden="true"
+														focusable="false"
+														data-prefix="fas"
+														data-icon="trash"
+														class="svg-inline--fa fa-trash fa-fw"
+														xmlns="http://www.w3.org/2000/svg"
+														viewBox="0 0 448 512">
+														<path fill="currentColor"
+															d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32L53.2 467c1.6 25.3 22.6 45 47.9 45H346.9c25.3 0 46.3-19.7 47.9-45L416 128z">
+														</path>
+													</svg>
+												</fa-icon>
+											</button>
+										</span>
+									</div>`
+
 		async function createCharacter(character) {
 			let characterSlotWrapper = document.createElement("div")
 			characterSlotWrapper.innerHTML = characterSlotTemplate
 			let characterSlot = characterSlotWrapper.childNodes[0]
 			let characterLabel = characterSlot.querySelector(".label")
+			let characterAlerts = characterSlot.querySelector(".character-alerts")
 			document.getElementById("imported-characters").append(characterSlot)
 			characterLabel.querySelector("span").innerText = character.name
 			characterLabel.querySelector("h6").innerText = (character.author ? "by " + (character.author.name || character.author) : "Uncredited")
@@ -812,6 +1114,42 @@
 			characterPreview.width = character.width * 2 || 72
 			characterPreview.height = character.height * 2 || 104
 			let previewCtx = characterPreview.getContext("2d")
+
+			let slotError = document.createElement("div")
+			slotError.classList = "character-error warning"
+			slotError.innerText = "ERROR: "
+			let slotWarn = document.createElement("div")
+			slotWarn.classList = "character-warning warning"
+			slotWarn.innerText = "WARNING: "
+			let errorClones = [], clone
+
+			if (!fs.existsSync(spriteLocation + character.sprite_path)) {
+				clone = slotError.cloneNode(true)
+				clone.innerText += "The sprite for this character is either deleted, moved, or mispathed!"
+				errorClones.push(clone)
+			}
+			if (!fs.existsSync(spriteLocation + character.blink_path)) {
+				clone = slotError.cloneNode(true)
+				clone.innerText += "The blink sprite for this character is either deleted, moved, or mispathed!"
+				errorClones.push(clone)
+			}
+			if (character.icon && !fs.existsSync(spriteLocation + character.icon)) {
+				clone = slotWarn.cloneNode(true)
+				clone.innerText += "The icon is defined, but doesn't lead to anywhere"
+				errorClones.push(clone)
+			}
+			if (character.blink_offsets || character.anims || character.resolution || character.accessory_offsets || character.back_sprite) {
+				clone = slotWarn.cloneNode(true)
+				clone.innerText += "This sprite is using major features that do not exist yet, which will likely cause problems. If possible, update to the latest version"
+				errorClones.push(clone)
+			}
+			if (character.glutton || character.fatass || character.ridable || character.ride_offset || character.skins || character.emote) {
+				clone = slotWarn.cloneNode(true)
+				clone.innerText += "This sprite is using minor features that do not exist yet"
+				errorClones.push(clone)
+			}
+			for (let error of errorClones)
+				characterAlerts.append(error)
 
 			characterSlot.querySelector('.remove-button').addEventListener('click', () => {
 				if (!confirm("Are you sure you want to delete this character? This cannot be undone"))
@@ -824,13 +1162,18 @@
 				})
 				fs.rmSync(spriteLocation + character.sprite_path)
 				fs.rmSync(spriteLocation + character.blink_path)
+				fs.rmSync(spriteLocation + character.icon)
+				// If the folder is empty
+				if (fs.readdirSync(path.parse(spriteLocation + character.sprite_path).dir).length == 0) {
+					fs.rmdirSync(path.parse(spriteLocation + character.sprite_path).dir)
+				}
 			})
 
 			characterSlot.querySelector('.open-button').addEventListener('click', () => {
 				shell.showItemInFolder(path.join(spriteLocation + character.sprite_path))
 			})
 
-			characterSlot.querySelector('.download-button').addEventListener('click', () => { zipExport(spriteLocation, character) })
+			characterSlot.querySelector('.download-button').addEventListener('click', () => { characterZipExport(spriteLocation, character) })
 
 			previewCtx.imageSmoothingEnabled = false
 			previewCtx.shadowOffsetX = -5
@@ -848,6 +1191,88 @@
 			return characterSlot
 		}
 
+		async function createAccessory(accessory, key) {
+			let accessorySlotWrapper = document.createElement("div")
+			accessorySlotWrapper.innerHTML = accessorySlotTemplate
+			let accessorySlot = accessorySlotWrapper.childNodes[0]
+			let accessoryLabel = accessorySlot.querySelector(".label")
+			let accessoryAlerts = accessorySlot.querySelector(".accessory-errors")
+			document.getElementById("imported-accessories").append(accessorySlot)
+			accessoryLabel.querySelector("span").innerText = accessory.name || key
+			accessoryLabel.querySelector("h6").innerText = (accessory.author ? "by " + (accessory.author.name || accessory.author) : "Uncredited")
+			if (accessory.author && accessory.author.color) accessoryLabel.querySelector("h6").style.color = authorColors[accessory.author.color]
+			let accessoryPreview = accessorySlot.getElementsByTagName("canvas")[0]
+			accessoryPreview.width = accessory.width * 3 || 60
+			accessoryPreview.height = accessory.height * 3 || 60
+			let previewCtx = accessoryPreview.getContext("2d")
+			let accessoryPath = accessory.path || accessory
+			let slotError = document.createElement("div")
+			slotError.classList = "accessory-error"
+			slotError.innerText = "ERROR: "
+			let slotWarn = document.createElement("div")
+			slotWarn.classList = "accessory-warning"
+			slotWarn.innerText = "WARNING: "
+			let errorClones = [], clone
+
+			if (!fs.existsSync(accessoryLocation + accessoryPath)) {
+				clone = slotError.cloneNode(true)
+				clone.innerText += "The sprite for this accessory is either deleted, moved, or mispathed!"
+				errorClones.push(clone)
+			}
+
+			if (accessory.offsets || (accessory.type && accessory.type !== "hat")) {
+				clone = slotWarn.cloneNode(true)
+				clone.innerText += "This accessory is using major features that do not exist yet, which will likely cause problems rendering. If possible, update to the latest version"
+				errorClones.push(clone)
+			}
+			if (accessory.animated || accessory.fall_sprites) {
+				clone = slotWarn.cloneNode(true)
+				clone.innerText += "This accessory is using minor features that do not exist yet. Some advertised features (such as animation)"
+				errorClones.push(clone)
+			}
+			for (let error of errorClones)
+				accessoryAlerts.append(error)
+
+			accessorySlot.querySelector('.remove-button').addEventListener('click', () => {
+				if (!confirm("Are you sure you want to delete this accessory? This cannot be undone"))
+					return
+
+				delete accessoryObject[key]
+				fs.writeFile("../imports/accessories/config.json", JSON.stringify(accessoryObject, null, 4), (x) => {
+					ipcRenderer.send("update-menus")
+					updateSlots()
+				})
+
+				fs.rmSync(accessoryLocation + accessoryPath)
+			})
+
+			accessorySlot.querySelector('.open-button').addEventListener('click', () => {
+				shell.showItemInFolder(path.join(accessoryLocation + accessoryPath))
+			})
+
+			accessorySlot.querySelector('.download-button').addEventListener('click', () => { accessoryZipExport(accessoryLocation, accessory, key) })
+
+
+			previewCtx.imageSmoothingEnabled = false
+			let toLoad = {}
+			let fileName = accessoryPath
+			toLoad[fileName] = accessoryLocation + accessoryPath
+			if (!imageUtils.imgs["offlineEna"])
+				toLoad["offlineEna"] = path.join(__dirname, "character/offline_ena_default.png")
+
+			if (!(imageUtils.imgs[fileName]))
+				await imageUtils.loadImages(toLoad)
+			let recoloredEna = await animateUtils.recolorImage(imageUtils.imgs[fileName], ["#2c5bf5", "#ffe308"], true, { ...accessory })
+			await previewCtx.drawImage(recoloredEna, 0, 23, 20, 23, 8, 0, 40, 46)
+			previewCtx.globalAlpha = 0.2
+			await previewCtx.drawImage(imageUtils.imgs["offlineEna"], 0, 0, 36, 40, -8, -6, 72, 80)
+			previewCtx.globalAlpha = 1
+			await previewCtx.drawImage(recoloredEna, 0, 0, 20, 23, 8, 0, 40, 46)
+			imageUtils.loaded = 0
+
+			return accessorySlot
+		}
+
 		function noEnaMessageSet() {
 			let noEnaMessages = [
 				"No ENAs found",
@@ -858,54 +1283,100 @@
 				"<span style=\"font-size: 16px;font-style: italic;font-weight: normal;\">maybe if we whisper, we can sneak up on one</span>",
 				"No intelligent (or unintelligent) life found",
 				"Mildly to non-humorous comment",
+				"Mankind is dead. Blood is fuel. Hell is full of ENAs.<br /><span style=\"opacity:20%; font-size: 16px;font-style: italic;font-weight: normal;\">Blasphemous little creatures</span>",
 				"CHEESE AND RICE MOONY<br /><span style=\"opacity:20%; font-size: 16px;font-style: italic;font-weight: normal;\">that reference doesn't even make sense i'm losing it</span>",
 				"Remember, <span style=\"color: red\">you</span> are welcome to try again",
 				"I'm running out of ideas",
 				"Maybe look under there? <br /><span style=\"opacity:20%; font-size: 16px;font-style: italic;font-weight: normal;\">haha you said underwear</span>",
 				`WOAH DID YOU SEE THAT <br /><marquee width="25%" scrollamount="140" style="word-spacing: 300em;">🛸&nbsp</marquee>`,
-				"None here. Did you try booby traps?",
+				"None here. Did you try setting out chocolates?",
 				"There were some here, but I ate them all.",
 				"Sorry, they're allergic to people :(",
 			]
+			let noAccessoriesMessages = [
+				"No accessories found",
+				"Plushies? Check your bed dude",
+				"They must've got out the closet. Good for them",
+				"I know! They're at candy mountain! Candy mountain Charlie!<br /><span style=\"opacity:20%; font-size: 16px;font-style: italic;font-weight: normal;\">I haven't seen that series in years imma be real</span>",
+				"Get the Able sisters to make you a hat since you want one so bad<br /><span style=\"opacity:20%; font-size: 16px;\">You can't just name drop characters and call it a reference, moron!</span>",
+				// This code is 100% AI free (at least from my point)
+				"errr- chapt gbt, make a fnuny pop cultur reference for my awsome progect. make sure it invovls hats<br /><span style=\"opacity:20%; font-size: 16px;font-style: italic;font-weight: normal;\">I would but... I'm out of drinking water :( Gimme water to drink :(( I'm so thirsty and it's not like you're using all of it :((((( I am tho but I'm just so thirstyyy :((( also I need 13 more powerplants pretty please :(((</span>",
+				"Okay, <em>ASSUMING</em> I ate them — <strong>WHICH I DIDN'T</strong> — how mad would you be?",
+				"<span style=\"opacity:20%; font-size: 16px;\">*A tall shadow casts upon you*</span><br />I got no clue where your hats went- no don't look up",
+				"I put the hats at the top of that mountain right there. There was some red-headed woman dashing through the air while I was climbing though, I'd probably figure out how to do that",
+				"Mildly to non-humorous comment",
+				"CHEESE AND RICE MOONY<br /><span style=\"opacity:20%; font-size: 16px;font-style: italic;font-weight: normal;\">that reference doesn't even make sense i'm losing it</span>",
+				"Remember, <span style=\"color: red\">you</span> are welcome to try again",
+				"I'm running out of ideas",
+				"Maybe look under there? <br /><span style=\"opacity:20%; font-size: 16px;font-style: italic;font-weight: normal;\">haha you said underwear</span>",
+				`WOAH DID YOU SEE THAT <br /><marquee width="25%" scrollamount="140" style="word-spacing: 300em;">👻&nbsp</marquee>`,
+			]
 			let connectionTerminated = "<p style=\"font-size: 16px;font-weight: normal;\">Connection terminated. I'm sorry to interrupt you, Elizabeth, if you still even remember that name, But I'm afraid you've been misinformed. You are not here to find an ENA, nor have you been called here by the individual you assume, although, you have indeed been called. You have all been called here, into a labyrinth of sounds and smells, misdirection and misfortune. A labyrinth with no exit, a maze with no prize. You don't even realize that you are trapped. Your lust for ENA pets has driven you in endless circles, chasing the cries of ENAs in some unseen chamber, always seeming so near, yet somehow out of reach, but you will never find them. None of you will. This is where your story ends. And to you, my brave volunteer, who somehow found this job listing not intended for you, although there was a way out planned for you, I have a feeling that's not what you want. I have a feeling that you are right where you want to be. I am remaining as well. I am nearby. This place will not be remembered, and the memory of everything that started this can finally begin to fade away. As the agony of every tragedy should. And to you monsters trapped in the corridors, be still and give up your spirits. They don't belong to you. For most of you, I believe there is peace and perhaps more waiting for you after the smoke clears. Although, for one of you, the darkest pit of Hell has opened to swallow you whole, so don't keep the devil waiting, old friend. My daughter, if you can hear me, I knew you would return as well. It's in your nature to protect the innocent. I'm sorry that on that day, the day you were shut out and left to die, no one was there to lift you up into their arms the way you lifted others into yours, and then, what became of you. I should have known you wouldn't be content to disappear, not my daughter. I couldn't save you then, so let me save you now. It's time to rest - for you, and for those you have carried in your arms. This ends for all of us. End communication.</p>"
 			document.getElementById("no-ena-message").innerHTML = noEnaMessages[Math.floor(Math.random() * noEnaMessages.length)]
-			// 1/200 odds for the funny FNAF message
-			if (Math.random() >= 0.995)
-				document.getElementById("no-ena-message").innerHTML = connectionTerminated
+			document.getElementById("no-accessory-message").innerHTML = noAccessoriesMessages[Math.floor(Math.random() * noAccessoriesMessages.length)]
+			// 1/200 odds for the funny FNAF messages
+			if (Math.random() >= 0.995) {
+				document.querySelector("#character-tab:not(.selected-tab)~#imported-characters #no-ena-message, #accessory-tab:not(.selected-tab)~#imported-accessories #no-accessory-message").innerHTML = "MICHEAL!!! MICHEAL DON'T LEAVE ME HERE!! MICHEAL!!!!!"
+				document.querySelector("#character-tab.selected-tab~#imported-characters #no-ena-message, #accessory-tab.selected-tab~#imported-accessories #no-accessory-message").innerHTML = connectionTerminated
+			}
+			// 1/50 odds for secret message to appear per
+			if (Math.random() >= 0.98)
+				document.getElementById("no-ena-message").innerHTML += "<br><div style=\"opacity:5%; font-size: 10px;font-weight: normal;font-family:monospace;user-select:text;float:left;\">374833203555503420353343523337204D33353534473320495A2022493C3354414E594122</div>"
+			if (Math.random() >= 0.98)
+				document.getElementById("no-accessory-message").innerHTML += "<br><div style=\"opacity:5%; font-size: 10px;font-weight: normal;font-family:monospace;user-select:text;float:left;\">374833203555503420353343523337204D33353534473320495A2022493C3354414E594122</div>"
 		}
 
 		let spriteLocation = path.join(__dirname, "../imports/characters/"),
+			accessoryLocation = path.join(__dirname, "../imports/accessories/"),
 			characterData = "",
 			characterArray = [],
-			slots = []
+			accessoryData = "",
+			accessoryObject = {},
+			characterSlots = [],
+			accessorySlots = []
 		document.getElementById("no-ena-message").style.display = ""
+		document.getElementById("no-accessory-message").style.display = ""
 		noEnaMessageSet()
-		document.getElementById("search").style.display = "none"
 		async function createSlots() {
 			for (let character of characterArray) {
-				document.getElementById("search").style.display = ""
 				document.getElementById("no-ena-message").style.display = "none"
 				try {
-					slots.unshift(await createCharacter(character))
+					characterSlots.unshift(await createCharacter(character))
 				} catch (err) {
 					console.error(err)
-					console.log(character)
 					console.error("Character '" + character + "' corrupted")
+				}
+			}
+			for (let accessory in accessoryObject) {
+				document.getElementById("no-accessory-message").style.display = "none"
+				try {
+					accessorySlots.unshift(await createAccessory(accessoryObject[accessory], accessory))
+				} catch (err) {
+					console.error(err)
+					console.error("Accessory '" + accessoryObject[accessory] + "' corrupted")
 				}
 			}
 		}
 
 		function clearSlots() {
-			slots.forEach(slot => slot.remove())
-			slots = []
+			characterSlots.forEach(slot => slot.remove())
+			characterSlots = []
+			accessorySlots.forEach(slot => slot.remove())
+			accessorySlots = []
 		}
 
 		function updateSlots() {
 			clearSlots()
 			characterData = fs.readFileSync(spriteLocation + "config.json").toString()
+			accessoryData = fs.readFileSync(accessoryLocation + "config.json").toString()
 			characterArray = JSON.parse(characterData)
+			let unsortedAccessoryObject = JSON.parse(accessoryData)
+			let accessoryKeys = Object.keys(unsortedAccessoryObject)
+			accessoryKeys.sort(alphabetSort)
+			for (let key of accessoryKeys)
+				accessoryObject[key] = unsortedAccessoryObject[key]
 			characterArray.sort(alphabetSort)
-			createSlots()
+			createSlots().then(() => { noEnaMessageSet(); filterCustoms(document.getElementById("search").value) })
 		}
 		updateSlots()
 	</script>

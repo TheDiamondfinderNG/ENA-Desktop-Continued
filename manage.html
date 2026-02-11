@@ -451,44 +451,6 @@
 																						style="width: 100%;">
 																						<option value="none" selected>
 																							None</option>
-																						<option value="ena">Ena Plushie
-																						</option>
-																						<option value="ena_bunny">Ena
-																							Bunny Plushie</option>
-																						<option value="bbq_ena">BBQ Ena
-																							Plushie</option>
-																						<option value="shepherd">
-																							Shepherd Plushie</option>
-																						<option value="margo">Margo
-																							Plushie</option>
-																						<option value="ula">Ula Plushie
-																						</option>
-																						<option value="hg_dog">Hourglass
-																							Dog Plushie</option>
-																						<option value="clown_dog">Clown
-																							Dog Plushie</option>
-																						<option value="turron">Turrón
-																						</option>
-																						<option value="pumpkin">Pumpkin
-																							Basket</option>
-																						<option value="dog_grim">DogGrim
-																							Plushie</option>
-																						<option value="margo_kitty">
-																							Margo Kitty Plushie</option>
-																						<option value="lollipop">
-																							Lollipop</option>
-																						<option value="eve_hat">Eve Hat
-																						</option>
-																						<option value="bbq_bunny">BBQ
-																							Ena Bunny Plushie</option>
-																						<option value="phone">Phone
-																							Accessory</option>
-																						<option value="leek">Leek
-																							Accessory</option>
-																						<option value="baguette">
-																							Baguette Accessory</option>
-																						<option value="pearto">Kasane
-																							Pearto</option>
 																					</select>
 																					<label
 																						class="dropdown-toggle"></label>
@@ -579,7 +541,8 @@
 															<div class="tinyface"></div>
 														</div>
 														<footer class="text-muted text-nowrap">
-															<div class="app-version">version <b class="me-2">v1.1.0 PRERELEASE (30cd193)
+															<div class="app-version">version <b class="me-2">v1.1.0
+																	BETA (build 1)
 																	<strong>(Community Continued)</strong></b></div>
 															<div class="text-end">
 																<div class="d-flex flex-wrap">
@@ -616,21 +579,19 @@
 	<script src="js/renderer.js"></script>
 	<script src="js/fixToTop.js"></script>
 	<script>
-		window.addEventListener('beforeunload', (e) => {
-			console.log(e)
+		// window.addEventListener('beforeunload', (e) => {
 
-			if (document.querySelector("#save-btn").disabled)
-				return
+		// 	if (document.querySelector("#save-btn").disabled)
+		// 		return
 
-			let dialogResult = ipcRenderer.sendSync("dialog", { message: "This character hasn't been saved yet, do you want to continue?", type: "warning", buttons: ["Yes", "No"] }).then((result) => {
-				console.log(result)
-			}).catch((err) => {
-				alert(err)
-			});
-			// console.log(e.returnValue)
-			if (dialogResult != 0)
-				e.returnValue = ""
-		})
+		// 	let dialogResult = ipcRenderer.sendSync("dialog", { message: "This character hasn't been saved yet, do you want to continue?", type: "warning", buttons: ["Yes", "No"] }).then((result) => {
+		// 	}).catch((err) => {
+		// 		alert(err)
+		// 	});
+		// 	// console.log(e.returnValue)
+		// 	if (dialogResult != 0)
+		// 		e.returnValue = ""
+		// })
 
 		const allowCustomShadows = document.querySelector('#allow-custom-shadows');
 		const shadowIntensity = document.querySelector('#shadow-intensity');

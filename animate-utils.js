@@ -39,10 +39,10 @@ class AnimateUtils {
         this.darkness = 50;
         this.angle = 0;
     };
-    clamp = function(value, min = 0, max = 255) {
+    clamp = function (value, min = 0, max = 255) {
         return value > min ? (value < max ? value : max) : min;
     };
-    repeat = function(count, ...values) {
+    repeat = function (count, ...values) {
         const result = [];
         for (let i = 0; i < count; i++) {
             result.push(...values);
@@ -56,7 +56,7 @@ class AnimateUtils {
         canvas.info = info;
         return canvas;
     };
-    initCanvas = function(element, w, h, id = undefined) {
+    initCanvas = function (element, w, h, id = undefined) {
         this.canvas = this.createExtCanvas(w, h, 'canvas');
         this.context = this.canvas.getContext('2d');
         document.querySelector(element).append(this.canvas);
@@ -82,7 +82,7 @@ class AnimateUtils {
     removeCharacter() {
         this.characters = [];
     }
-    createCharacter = function(image, eyes, name, x, y, w, h, activeAnimation, options = {}, custom, subPath = '') {
+    createCharacter = function (image, eyes, name, x, y, w, h, activeAnimation, options = {}, custom, subPath = '') {
         this.characters = [];
         this.name = name;
         this.characters.push({
@@ -126,76 +126,83 @@ class AnimateUtils {
             }]
         });
         fetch(subPath + (custom ? 'custom' : name.toLowerCase()) + '.json') // 'db/' + name...
-        .then(response => response.json())
-        .then(data => {
-            this.store_coords.eye.image = eyes;
+            .then(response => response.json())
+            .then(data => {
+                this.store_coords.eye.image = eyes;
 
-            if (this.store_characters[name] == null) {
-                this.store_characters[name] = {image: image};
-            }
+                if (this.store_characters[name] == null) {
+                    this.store_characters[name] = { image: image };
+                }
 
-            const { w, h } = this.findCharacter(name);
-            const diffW = (w - 36) / 2;
-            const diffH = h - 52;
+                const { w, h } = this.findCharacter(name);
+                const diffW = (w - 36) / 2;
+                const diffH = h - 52;
 
-            // Ajustar coordenadas de los ojos
-            if (this.store_coords.eye.characters[name] == null) {
-                this.store_coords.eye.characters[name] = {
-                    index: data.eyes_index,
-                    coord: data.eyes.map(([x, y]) => [x + diffW, y + diffH])
-                };
-            }
+                // Ajustar coordenadas de los ojos
+                if (this.store_coords.eye.characters[name] == null) {
+                    this.store_coords.eye.characters[name] = {
+                        index: data.eyes_index,
+                        coord: data.eyes.map(([x, y]) => [x + diffW, y + diffH])
+                    };
+                }
 
-            // Ajustar coordenadas de los accesorios
-            if (this.store_coords.accessory.characters[name] == null) {
-                this.store_coords.accessory.characters[name] = {
-                    coord: data.accessory.map(([x, y, z], index) => [x + diffW + (w - 36) * (index % 10), y + diffH, z])
-                };
-            }
-            this.setRecolor([
-                this.findCharacter(this.name).c_primary,
-                this.findCharacter(this.name).c_secondary
-            ]);
-            if (this.findCharacter(this.name).accessory != 'none') {
-                this.setAccessory(this.findCharacter(this.name).accessory);
-            }
-        }).catch(error => alert('An error occurred: ' + error));
+                // Ajustar coordenadas de los accesorios
+                if (this.store_coords.accessory.characters[name] == null) {
+                    this.store_coords.accessory.characters[name] = {
+                        coord: data.accessory.map(([x, y, z], index) => [x + diffW + (w - 36) * (index % 10), y + diffH, z])
+                    };
+                }
+                this.setRecolor([
+                    this.findCharacter(this.name).c_primary,
+                    this.findCharacter(this.name).c_secondary
+                ]);
+                if (this.findCharacter(this.name).accessory != 'none') {
+                    this.setAccessory(this.findCharacter(this.name).accessory);
+                }
+            }).catch(error => alert('An error occurred: ' + error));
     };
-    findCharacter = function(name) {
+    findCharacter = function (name) {
         return this.characters.find(k => k.name == name);
     };
-    saveAccessory = function(accessories) {
+    saveAccessory = function (accessories) {
         const self = this;
-        Object.keys(accessories).forEach(function(key) {
-            self.store_accessories[key] = {image: accessories[key]};
+        Object.keys(accessories).forEach(function (key) {
+            self.store_accessories[key] = { image: accessories[key] };
         });
     }
     setAccessory = function(name) {
-        this.setRecolor([this.findCharacter(this.name).c_primary, this.findCharacter(this.name).c_secondary]);
-        if (name !== 'none') {
-            let character = this.findCharacter(this.name);
-            var c = document.createElement('canvas');
-            var ctx = c.getContext("2d");
-            var w = character.canvas.width;
-            var h = character.canvas.height;
-            c.width = w;
-            c.height = h;
-            let layer = this.store_accessories[name].image;
-            let coord = this.store_coords.accessory.characters[character.name].coord;
-            // So it doesn't do the same exact thing 26 times :)
-            let recoloredAccessory = this.recolorImage(layer, [character.c_tertiary, character.c_quaternary])
-            for (var i = 0; i < coord.length; i++) {
-                ctx.drawImage(recoloredAccessory, coord[i][2] * (layer.width / 2), (layer.height / 2), (layer.width / 2), (layer.height / 2), ((i % 10) * 36) + coord[i][0], coord[i][1] + (Math.floor(i / 10) * character.h), (layer.width / 2), (layer.height / 2));
-            }
+        let character = this.findCharacter(this.name);
+        var c = document.createElement('canvas');
+        var ctx = c.getContext("2d");
+        var w = character.canvas.width;
+        var h = character.canvas.height;
+        c.width = w;
+        c.height = h;
+        if (name == "none") {
             ctx.drawImage(this.recolorImage(this.store_characters[character.name].image, [character.c_primary, character.c_secondary]), 0, 0, w, h, 0, 0, w, h);
-            for (var i = 0; i < coord.length; i++) {
-                ctx.drawImage(recoloredAccessory, coord[i][2] * (layer.width / 2), 0, (layer.width / 2), (layer.height / 2), ((i % 10) * 36) + coord[i][0], coord[i][1] + (Math.floor(i / 10) * character.h), (layer.width / 2), (layer.height / 2));
-            }
             character.accessory = name;
             character.canvas = c;
+            this.setRecolor([this.findCharacter(this.name).c_primary, this.findCharacter(this.name).c_secondary]);
+
+            return
         }
+
+        let layer = this.store_accessories[name].image;
+        let coord = this.store_coords.accessory.characters[character.name].coord;
+        // So it doesn't do the same exact thing 26 times :)
+        let recoloredAccessory = this.recolorImage(layer, [character.c_tertiary, character.c_quaternary])
+        for (var i = 0; i < coord.length; i++) {
+            ctx.drawImage(recoloredAccessory, coord[i][2] * (layer.width / 2), (layer.height / 2), (layer.width / 2), (layer.height / 2), ((i % 10) * 36) + coord[i][0], coord[i][1] + (Math.floor(i / 10) * character.h), (layer.width / 2), (layer.height / 2));
+        }
+        ctx.drawImage(this.recolorImage(this.store_characters[character.name].image, [character.c_primary, character.c_secondary]), 0, 0, w, h, 0, 0, w, h);
+        for (var i = 0; i < coord.length; i++) {
+            ctx.drawImage(recoloredAccessory, coord[i][2] * (layer.width / 2), 0, (layer.width / 2), (layer.height / 2), ((i % 10) * 36) + coord[i][0], coord[i][1] + (Math.floor(i / 10) * character.h), (layer.width / 2), (layer.height / 2));
+        }
+        character.accessory = name;
+        character.canvas = c;
+
     };
-    setRecolor = function(colors) {
+    setRecolor = function (colors) {
         const character = this.findCharacter(this.name);
         if (this.isHexColor(colors[0]) && this.isHexColor(colors[1])) {
             character.c_primary = colors[0];
@@ -204,27 +211,27 @@ class AnimateUtils {
             character.canvas2 = this.recolorImage(this.store_coords.eye.image, [character.c_primary, character.c_secondary]);
         }
     };
-    setRecolor2 = function(colors) {
+    setRecolor2 = function (colors) {
         const character = this.findCharacter(this.name);
         if (this.isHexColor(colors[0]) && this.isHexColor(colors[1])) {
             character.c_tertiary = colors[0];
             character.c_quaternary = colors[1];
         }
     };
-    createFrame = function([offsetX = 0, offsetY = 0]) {
+    createFrame = function ([offsetX = 0, offsetY = 0]) {
         return {
             offsetX, offsetY
         };
     };
-    createAnimation = function(name, fps, direction, loop, frames) {
+    createAnimation = function (name, fps, direction, loop, frames) {
         var result = { name, loop, fps, direction, frames: frames.map(this.createFrame) };
         this.animations.push(result);
         return result;
     };
-    findAnimation = function(animation) {
+    findAnimation = function (animation) {
         return this.animations.find(k => k.name == animation.toLowerCase());
     };
-    changeAnimation = function(name, animation) {
+    changeAnimation = function (name, animation) {
         var character = this.characters.find(k => k.name === name);
         if ((character.activeAnimation != animation)) {
             character.activeAnimation = animation;
@@ -232,9 +239,9 @@ class AnimateUtils {
             character.state.animationFrame = 0;
         }
     };
-    closeEyes = function(name, closed) {
+    closeEyes = function (name, closed) {
         var character = this.characters.find(k => k.name === name);
-        
+
         character.eyesClosed = closed
     };
     // hslToRgb = function(h, s, l) {
@@ -262,17 +269,17 @@ class AnimateUtils {
     //     const isWalkingRight = character.activeAnimation === "walk-r";
     //     const isWalkingLeft = character.activeAnimation === "walk-l";
     //     const speed = isWalkingRight ? -4 : isWalkingLeft ? 4 : 0;
-    
+
     //     character.clones[1].data = character.clones[0].data
     //         ? { ...character.clones[0].data, x: character.clones[0].data.x * 2 }
     //         : null;
-        
+
     //     character.clones[0].data = speed === 0 ? null : {
     //         x: speed,
     //         y: 0
     //     };
     // };
-    onInit = function() {
+    onInit = function () {
         if (this.interval >= 1) { return; }
         let last = Date.now();
         this.interval = setInterval(() => {
@@ -281,11 +288,11 @@ class AnimateUtils {
             last = now;
         }, 1000 / 45);
     };
-    onDestroy = function() {
+    onDestroy = function () {
         clearInterval(this.interval);
         this.interval = 0;
     };
-    update = function(delta) {
+    update = function (delta) {
         const rotationSpeed = Math.PI / 180;
         const now = performance.now();
         if ((now - this.lastDraw) < this.frameDelay) { return; }
@@ -301,7 +308,12 @@ class AnimateUtils {
             fontUtils.drawText(this.context, this.font.image, this.username, 100 - ((fontUtils.textSize(this.username) - 12) / 2), Math.floor(47 / this.scale), 2);
         }
         if (this.role != null && !this.fixed) {
-            fontUtils.drawTiny(this.context, this.tiny.image, this.role, 100 - ((fontUtils.tinySize(this.role) - 9) / 2), Math.floor(47 / this.scale) + 11, 2);
+            let splitCredits = this.role.split("\n")
+            for (let i in splitCredits) {
+                if (splitCredits[0][0] == "^" && splitCredits[i][0] != "^")
+                    splitCredits[i] = splitCredits[0].substr(0, 2) + splitCredits[i]
+                fontUtils.drawTiny(this.context, this.tiny.image, splitCredits[i], 100 - ((fontUtils.tinySize(splitCredits[i]) - 9) / 2), Math.floor(47 / this.scale) + 11 + (i * 8), 2);
+            }
         }
         this.characters.forEach((character) => {
             // Draw Clones
@@ -309,7 +321,7 @@ class AnimateUtils {
             //     let clone = character.clones[i];
             //     if (clone.data != null) {
             //         this.context.globalCompositeOperation = "lighter";
-            //         this.context.drawImage(this.drawClone(character.canvas, ((clone.color)) % 255, clone.opacity, clone.mirrored), this.findAnimation(character.activeAnimation).frames[character.state.animationFrame].offsetX * character.w, this.findAnimation(character.activeAnimation).frames[character.state.animationFrame].offsetY * character.h, character.w, character.h, (character.x + clone.data.x) * this.scale, character.y * this.scale, character.w * this.scale, character.h * this.scale);
+            //         this.context.drawImage(this.drawClone(character.canvas, ((clone.color)) % 255, clone.opacity, clone.mirrored), offsetX * character.w, offsetY * character.h, character.w, character.h, (character.x + clone.data.x) * this.scale, character.y * this.scale, character.w * this.scale, character.h * this.scale);
             //         this.context.globalCompositeOperation = "source-over"
             //         clone.color += 1;
             //     }
@@ -317,11 +329,12 @@ class AnimateUtils {
             // Update Clone Data
             // this.addClone(this.name);
             // Draw Character
+            let {offsetX, offsetY} = this.findAnimation(character.activeAnimation).frames[character.state.animationFrame]
             if (this.username != null) {
-                this.drawOutline(character.canvas, this.findAnimation(character.activeAnimation).frames[character.state.animationFrame].offsetX * character.w, this.findAnimation(character.activeAnimation).frames[character.state.animationFrame].offsetY * character.h, character.w, character.h, (400 / 2) - ((character.w / 2) * this.scale), (400 / 2) - ((character.h / 2) * this.scale), character.w * this.scale, character.h * this.scale);
+                this.drawOutline(character.canvas, offsetX * character.w, offsetY * character.h, character.w, character.h, (400 / 2) - ((character.w / 2) * this.scale), (400 / 2) - ((character.h / 2) * this.scale), character.w * this.scale, character.h * this.scale);
             } else {
                 // this.context.rotate(delta % 180);
-                this.context.drawImage(character.canvas, this.findAnimation(character.activeAnimation).frames[character.state.animationFrame].offsetX * character.w, this.findAnimation(character.activeAnimation).frames[character.state.animationFrame].offsetY * character.h, character.w, character.h, character.x * this.scale, character.y * this.scale, character.w * this.scale, character.h * this.scale);
+                this.context.drawImage(character.canvas, offsetX * character.w, offsetY * character.h, character.w, character.h, character.x * this.scale, character.y * this.scale, character.w * this.scale, character.h * this.scale);
             }
             if (document.querySelectorAll('#current-frame').length >= 1 && this.name != null) {
                 document.querySelector('#current-frame').value = character.state.animationFrame;
@@ -330,10 +343,10 @@ class AnimateUtils {
             if (character.canvas2 != null && character.blink && !character.activeAnimation.includes("init-fall-") && this.findAnimation(character.eyesClosed ? 'closed-eyes' : 'blinking').frames[character.state.blinkFrame].offsetX === 1) {
                 if (this.username != null) {
                     // manage.html
-                    this.context.drawImage(character.canvas2, this.store_coords.eye.characters[character.name].index * this.store_coords.eye.w, this.findAnimation(character.activeAnimation).direction ? this.store_coords.eye.h : 0, this.store_coords.eye.w, this.store_coords.eye.h, (400 / 2) - ((character.w / 2) * this.scale) + (this.store_coords.eye.characters[character.name].coord[this.findAnimation(character.activeAnimation).frames[character.state.animationFrame].offsetX + (this.findAnimation(character.activeAnimation).frames[character.state.animationFrame].offsetY * 10)][0] * this.scale), (400 / 2) - ((character.h / 2) * this.scale) + (this.store_coords.eye.characters[character.name].coord[this.findAnimation(character.activeAnimation).frames[character.state.animationFrame].offsetX + (this.findAnimation(character.activeAnimation).frames[character.state.animationFrame].offsetY * 10)][1] * this.scale), this.store_coords.eye.w * this.scale, this.store_coords.eye.h * this.scale);
+                    this.context.drawImage(character.canvas2, this.store_coords.eye.characters[character.name].index * this.store_coords.eye.w, this.findAnimation(character.activeAnimation).direction ? this.store_coords.eye.h : 0, this.store_coords.eye.w, this.store_coords.eye.h, (400 / 2) - ((character.w / 2) * this.scale) + (this.store_coords.eye.characters[character.name].coord[offsetX + (offsetY * 10)][0] * this.scale), (400 / 2) - ((character.h / 2) * this.scale) + (this.store_coords.eye.characters[character.name].coord[offsetX + (offsetY * 10)][1] * this.scale), this.store_coords.eye.w * this.scale, this.store_coords.eye.h * this.scale);
                 } else {
                     // index.html
-                    this.context.drawImage(character.canvas2, this.store_coords.eye.characters[character.name].index * this.store_coords.eye.w, this.findAnimation(character.activeAnimation).direction ? this.store_coords.eye.h : 0, this.store_coords.eye.w, this.store_coords.eye.h, (character.x * this.scale) + (this.store_coords.eye.characters[character.name].coord[this.findAnimation(character.activeAnimation).frames[character.state.animationFrame].offsetX + (this.findAnimation(character.activeAnimation).frames[character.state.animationFrame].offsetY * 10)][0] * this.scale), (character.y * this.scale) + (this.store_coords.eye.characters[character.name].coord[this.findAnimation(character.activeAnimation).frames[character.state.animationFrame].offsetX + (this.findAnimation(character.activeAnimation).frames[character.state.animationFrame].offsetY * 10)][1] * this.scale), this.store_coords.eye.w * this.scale, this.store_coords.eye.h * this.scale);
+                    this.context.drawImage(character.canvas2, this.store_coords.eye.characters[character.name].index * this.store_coords.eye.w, this.findAnimation(character.activeAnimation).direction ? this.store_coords.eye.h : 0, this.store_coords.eye.w, this.store_coords.eye.h, (character.x * this.scale) + (this.store_coords.eye.characters[character.name].coord[offsetX + (offsetY * 10)][0] * this.scale), (character.y * this.scale) + (this.store_coords.eye.characters[character.name].coord[offsetX + (offsetY * 10)][1] * this.scale), this.store_coords.eye.w * this.scale, this.store_coords.eye.h * this.scale);
                 }
             }
             // This will animate the character
@@ -341,7 +354,7 @@ class AnimateUtils {
             if (character.blink) {
 
                 character.state.blinkFrame = Math.floor((character.animationTime + character.state.randomBlink) * this.findAnimation(character.eyesClosed ? 'closed-eyes' : 'blinking').fps) % this.findAnimation(character.eyesClosed ? 'closed-eyes' : 'blinking').frames.length;
-            
+
             }
 
             if (!(!this.findAnimation(character.activeAnimation).loop && character.state.animationFrame >= (this.findAnimation(character.activeAnimation).frames.length - 1))) {
@@ -349,7 +362,7 @@ class AnimateUtils {
             }
         });
     };
-    hexToRgb = function(hex) {
+    hexToRgb = function (hex) {
         let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
         if (result) {
             return [
@@ -361,15 +374,15 @@ class AnimateUtils {
             return null;
         }
     };
-    rgbToHsv = function(r, g, b) {
+    rgbToHsv = function (r, g, b) {
         r /= 255, g /= 255, b /= 255;
-    
+
         let max = Math.max(r, g, b), min = Math.min(r, g, b);
         let h, s, v = max;
-    
+
         let d = max - min;
         s = max == 0 ? 0 : d / max;
-    
+
         if (max == min) {
             h = 0;
         } else {
@@ -380,18 +393,18 @@ class AnimateUtils {
             }
             h /= 6;
         }
-    
+
         return [h, s, v];
     };
-    hsvToRgb = function(h, s, v) {
+    hsvToRgb = function (h, s, v) {
         let r, g, b;
-    
+
         let i = Math.floor(h * 6);
         let f = h * 6 - i;
         let p = v * (1 - s);
         let q = v * (1 - f * s);
         let t = v * (1 - (1 - f) * s);
-    
+
         switch (i % 6) {
             case 0: r = v, g = t, b = p; break;
             case 1: r = q, g = v, b = p; break;
@@ -400,32 +413,32 @@ class AnimateUtils {
             case 4: r = t, g = p, b = v; break;
             case 5: r = v, g = p, b = q; break;
         }
-    
+
         return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
     };
-    isHexColor = function(hex) {
+    isHexColor = function (hex) {
         return /^[#]([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/i.test(hex);
     };
     adjustColors(colors, darkness, sFactor = 0.24, vFactor = 0.56, hShift = 0) {
         return colors.map(color => {
             let [r, g, b] = this.hexToRgb(color);
-            
+
             // Color exclusivo para #f3e5be
             if (r === 243 && g === 229 && b === 190) {
                 [r, g, b] = [194, 237, 255];
             }
-    
+
             let [h, s, v] = this.rgbToHsv(r, g, b);
-            
+
             // Ajustar saturación y brillo según el nivel de oscuridad
             h = this.clamp((h + (hShift / 360)) % 1, 0, 1); // use this.clamp for avoid NaN values
             s = this.clamp(s + ((darkness * 0.01) * sFactor), 0, 1);
             v = this.clamp(v - ((darkness * 0.01) * vFactor), 0, 1);
-            
+
             return this.hsvToRgb(h, s, v);
         });
     };
-    recolorImage = function(img, colors, imageOnly = false, imageDetails = {}) {
+    recolorImage = function (img, colors, imageOnly = false, imageDetails = {}) {
         try {
             var c = document.createElement('canvas');
             var ctx = c.getContext("2d");
@@ -435,9 +448,9 @@ class AnimateUtils {
             c.height = h;
             ctx.drawImage(img, 0, 0, w, h);
             var imageData = ctx.getImageData(0, 0, w, h);
-            
+
             if (!imageOnly)
-            var character = this.findCharacter(this.name);
+                var character = this.findCharacter(this.name);
             let newColors1 = this.adjustColors(colors, this.darkness * (imageOnly ? (imageDetails.darknessOffset ? imageDetails.darknessOffset[0] : 1) : character.darknessOffset[0]), 0.30, 0.45, imageOnly ? (imageDetails.hueShift ? imageDetails.hueShift[0] : 0) : character.hueShift[0]);
             let newColors2 = this.adjustColors(colors, this.darkness * (imageOnly ? (imageDetails.darknessOffset ? imageDetails.darknessOffset[1] : 1.45) : character.darknessOffset[1]), 0.35, 0.60, imageOnly ? (imageDetails.hueShift ? imageDetails.hueShift[1] : 0) : character.hueShift[1]);
             let newColors3 = this.adjustColors(colors, this.darkness * (imageOnly ? (imageDetails.darknessOffset ? imageDetails.darknessOffset[2] : 1.60) : character.darknessOffset[2]), 0.40, 0.75, imageOnly ? (imageDetails.hueShift ? imageDetails.hueShift[2] : 0) : character.hueShift[2]);
@@ -455,11 +468,11 @@ class AnimateUtils {
             let self = this;
 
             for (var i = 0; i < imageData.data.length; i += 4) {
-                finalColors.forEach(function(color) {
+                finalColors.forEach(function (color) {
                     if (imageData.data[i + 3] == 255 &&
-                    self.clamp(color[0] + 2) >= imageData.data[i] && self.clamp(color[0] - 2) <= imageData.data[i] &&
-                    self.clamp(color[1] + 2) >= imageData.data[i + 1] && self.clamp(color[1] - 2) <= imageData.data[i + 1] &&
-                    self.clamp(color[2] + 2) >= imageData.data[i + 2] && self.clamp(color[2] - 2) <= imageData.data[i + 2]) {
+                        self.clamp(color[0] + 2) >= imageData.data[i] && self.clamp(color[0] - 2) <= imageData.data[i] &&
+                        self.clamp(color[1] + 2) >= imageData.data[i + 1] && self.clamp(color[1] - 2) <= imageData.data[i + 1] &&
+                        self.clamp(color[2] + 2) >= imageData.data[i + 2] && self.clamp(color[2] - 2) <= imageData.data[i + 2]) {
                         imageData.data[i] = color[3];
                         imageData.data[i + 1] = color[4];
                         imageData.data[i + 2] = color[5];

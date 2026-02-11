@@ -121,7 +121,8 @@
 															<div class="tinyface"></div>
 														</div>
 														<footer class="text-muted text-nowrap">
-															<div class="app-version">version <b class="me-2">v1.1.0 PRERELEASE (30cd193)
+															<div class="app-version">version <b class="me-2">v1.1.0
+																	BETA (build 1)
 																	<strong>(Community Continued)</strong></b></div>
 															<div class="text-end">
 																<div class="d-flex flex-wrap">
@@ -157,6 +158,7 @@
 	<script src="js/ponyUtils.js"></script>
 	<script src="js/fixToTop.js"></script>
 	<script>
+		const fs = require('fs');
 		let windowContainer = document.querySelector(".window-container"),
 			saveSlots = document.querySelector("main"),
 			saveBounds = saveSlots.getBoundingClientRect(),
@@ -181,27 +183,14 @@
 			saveBounds = saveSlots.getBoundingClientRect();
 		}
 
-		let accessories = {
-			ena: 'img/accessory/Ena_accessory.png',
-			bbq_ena: 'img/accessory/BBQEna_accessory.png',
-			shepherd: 'img/accessory/Shepherd_accessory.png',
-			margo: 'img/accessory/Margo_accessory.png',
-			ula: 'img/accessory/Ula_accessory.png',
-			hg_dog: 'img/accessory/HourglassDog_accessory.png',
-			turron: 'img/accessory/Turron_accessory.png',
-			pumpkin: 'img/accessory/Pumpkin_accessory.png',
-			ena_bunny: 'img/accessory/EnaBunny_accessory.png',
-			clown_dog: 'img/accessory/ClownDog_accessory.png',
-			dog_grim: 'img/accessory/DogGrim_accessory.png',
-			margo_kitty: 'img/accessory/MargoKitty_accessory.png',
-			lollipop: 'img/accessory/Lollipop_accessory.png',
-			eve_hat: 'img/accessory/pt_eveHat_accessory.png',
-			bbq_bunny: 'img/accessory/EnaBunnyBBQ_accessory.png',
-			phone: 'img/accessory/phone_accessory.png',
-			leek: 'img/accessory/leek_accessory.png',
-			baguette: 'img/accessory/baguette_accessory.png',
-			pearto: 'img/accessory/pearto_accessory.png'
-		}
+		let importedAccessories = JSON.parse(fs.readFileSync("../imports/accessories/config.json"))
+		let defaultAccessories = JSON.parse(fs.readFileSync("img/accessory/config.json"))
+		let accessories = {}
+		for (const accessory in defaultAccessories)
+			accessories[accessory] = "img/accessory/" + (defaultAccessories[accessory].path || defaultAccessories[accessory])
+		for (const accessory in importedAccessories)
+			accessories[accessory] = "../imports/accessories/" + (importedAccessories[accessory].path || importedAccessories[accessory])
+
 
 		// Create a save slot and return its data
 		function createSave(e, data = emptySave) {
@@ -677,7 +666,7 @@
 						characterCtx.fillStyle = "#F00"
 						characterCtx.fillRect(0, 0, 60, 100)
 						characterCtx.fillStyle = "#FFF"
-						characterCtx.fillText("FAILED TO LOAD "+characterData.characterName, 0, 10)
+						characterCtx.fillText("FAILED TO LOAD " + characterData.characterName, 0, 10)
 						savePreviewContext.drawImage(characterCanvas, offsetX, 0)
 						characterCtx.clearRect(0, 0, 1000, 1000)
 						imageUtils.imgs = {}
@@ -686,7 +675,7 @@
 					if (imagesFailedLoad) continue
 					let ena = imageUtils.imgs["sprite"]
 					let acc = imageUtils.imgs["accessory"]
-					let ena2 = await animateUtils.recolorImage(ena, [characterData.primaryColor, characterData.secondaryColor], true, {...characterData})
+					let ena2 = await animateUtils.recolorImage(ena, [characterData.primaryColor, characterData.secondaryColor], true, { ...characterData })
 					let acc2 = await animateUtils.recolorImage(acc, [characterData.tertiaryColor, characterData.quaternaryColor], true)
 
 					characterCtx.imageSmoothingEnabled = false
