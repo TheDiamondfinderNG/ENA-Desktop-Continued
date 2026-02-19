@@ -183,13 +183,13 @@
 			saveBounds = saveSlots.getBoundingClientRect();
 		}
 
-		let importedAccessories = JSON.parse(fs.readFileSync("../imports/accessories/config.json"))
-		let defaultAccessories = JSON.parse(fs.readFileSync("img/accessory/config.json"))
+		let importedAccessories = JSON.parse(fs.readFileSync(__dirname+"/../imports/accessories/config.json"))
+		let defaultAccessories = JSON.parse(fs.readFileSync(__dirname+"/img/accessory/config.json"))
 		let accessories = {}
 		for (const accessory in defaultAccessories)
-			accessories[accessory] = "img/accessory/" + (defaultAccessories[accessory].path || defaultAccessories[accessory])
+			accessories[accessory] = "/img/accessory/" + (defaultAccessories[accessory].path || defaultAccessories[accessory])
 		for (const accessory in importedAccessories)
-			accessories[accessory] = "../imports/accessories/" + (importedAccessories[accessory].path || importedAccessories[accessory])
+			accessories[accessory] = "/../imports/accessories/" + (importedAccessories[accessory].path || importedAccessories[accessory])
 
 
 		// Create a save slot and return its data
@@ -657,7 +657,7 @@
 					let paths = {}
 					paths["sprite"] = 'img/character/' + (characterData.isCustomCharacter ? "../../" + (characterData.isImportedCharacter ? "../imports/characters/" : "character/") : "") + characterData.spriteImage
 					if (characterData.accessory != 'none')
-						paths["accessory"] = accessories[characterData.accessory]
+						paths["accessory"] = __dirname+accessories[characterData.accessory]
 
 					let imagesFailedLoad = false
 					await imageUtils.loadImages(paths).catch((err) => {
