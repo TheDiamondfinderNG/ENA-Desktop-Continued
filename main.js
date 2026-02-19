@@ -260,7 +260,7 @@ ipcMain.on('channel1', (event, arg) => {
             characterStates[win.id].lastEvent.sender.send('setIsImported', characterStates[win.id].imported);
             characterStates[win.id].lastEvent.sender.send('setPetStrength', petStrength);
             characterStates[win.id].lastEvent.sender.send('setPetDecay', petDecay);
-            characterStates[win.id].lastEvent.sender.send('setTransparency', currentIgnore ? currentIgnore : transparency);
+            characterStates[win.id].lastEvent.sender.send('setTransparency', currentIgnore ? inactiveTransparency : transparency);
             characterStates[win.id].lastEvent.sender.send('changeSprite', characterStates[win.id].sprite, characterStates[win.id].blink);
             characterStates[win.id].lastEvent.sender.send('changeScale', currentScale);
             characterStates[win.id].lastEvent.sender.send('changeAccessory', characterStates[win.id].accessory, false, globalAccessoriesConfig);
