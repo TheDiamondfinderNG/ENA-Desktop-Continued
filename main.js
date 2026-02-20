@@ -1348,8 +1348,8 @@ function setCollision(win) {
                 characterStates[win.id].lastEvent.sender.send('channel1', 'walk-' + (characterStates[win.id].direction === 'right' ? 'r' : 'l'));
             }
         }
-        if (y + winHeight > (!winIsFullscreen ? height : displays.size.height)) { // Bottom
-            win.setPosition(x, (!winIsFullscreen ? height : displays.size.height) - winHeight);
+        if (y + winHeight > (!winIsFullscreen ? height : displays[0].size.height)) { // Bottom
+            win.setPosition(x, (!winIsFullscreen ? height : displays[0].size.height) - winHeight);
             characterStates[win.id].isFalling = false;
         }
         if (y < 0) { // Top
