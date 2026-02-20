@@ -496,7 +496,7 @@ ipcMain.on('update-inactive-transparency', (event, val) => {
 ipcMain.on('get-inactive-transparency', (event) => {
     for (const character in characterStates) {
         characterStates[character].lastEvent.sender.send('setTransparency', currentIgnore ? inactiveTransparency : transparency);
-    }inactiveTransparency
+    }
     event.returnValue = inactiveTransparency;
 });
 
@@ -966,7 +966,7 @@ function updateTray() {
                 currentIgnore = !currentIgnore;
                 windows.forEach(win => {
                     win.setIgnoreMouseEvents(currentIgnore);
-                    
+
                     characterStates[win.id].lastEvent.sender.send('setTransparency', currentIgnore ? inactiveTransparency : transparency);
                     updateTray()
                 });
@@ -1320,22 +1320,19 @@ function setCollision(win) {
             win.setPosition(x, characterStates[win.id].lastRoofY);
         }
     } else {
-        if (characterStates[win.id].isFalling && characterStates[win.id].isBouncing) {
+        if (characterStates[win.id].isFalling && characterStates[win.id].isBouncing && bounciness > 0) {
             if (x + winWidth > width && characterStates[win.id].v_speed_x > 0) {
-                characterStates[win.id].v_speed_x *= -1;
+                characterStates[win.id].v_speed_x *= -bounciness;
             }
             if (x < 0) {
-                characterStates[win.id].v_speed_x = Math.abs(characterStates[win.id].v_speed_x);
+                characterStates[win.id].v_speed_x = Math.abs(characterStates[win.id].v_speed_x) * bounciness;
             }
             if (y < 0) {
                 characterStates[win.id].v_speed_y *= -1;
             }
         }
-
-        if (characterStates[win.id].isFalling && characterStates[win.id].isBouncing) { return; }
-
+        
         if (x + winWidth > width) { // Right
-            characterStates[win.id].v_speed_x = 0;
             characterStates[win.id].direction = 'left';
             characterStates[win.id].dx = (-1 * characterStates[win.id].scale * characterStates[win.id].speed);
             win.setPosition(width - winWidth, y);
@@ -1344,7 +1341,6 @@ function setCollision(win) {
             }
         }
         if (x < 0) { // Left
-            characterStates[win.id].v_speed_x = 0;
             characterStates[win.id].direction = 'right';
             characterStates[win.id].dx = (1 * characterStates[win.id].scale * characterStates[win.id].speed);
             win.setPosition(0, y);
@@ -1353,7 +1349,6 @@ function setCollision(win) {
             }
         }
         if (y + winHeight > (!winIsFullscreen ? height : displays.size.height)) { // Bottom
-            characterStates[win.id].v_speed_y = 0;
             win.setPosition(x, (!winIsFullscreen ? height : displays.size.height) - winHeight);
             characterStates[win.id].isFalling = false;
         }
