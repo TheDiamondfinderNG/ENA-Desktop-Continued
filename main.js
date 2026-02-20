@@ -1235,9 +1235,9 @@ function setCollision(win) {
         if (!(monitorLock && !characterStates[win.id].isDragging && characterStates[win.id].lastFloorY != Infinity)) {
             characterStates[win.id].lastLeftWall = bounds.bounds.x + (monitorLock ? 3 : 1)
             characterStates[win.id].lastRightWall = bounds.bounds.x + bounds.bounds.width
-        }
-        characterStates[win.id].lastFloorY = bounds.bounds.y + (!winIsFullscreen ? bounds.workAreaSize.height : bounds.size.height)
-        characterStates[win.id].lastRoofY = bounds.bounds.y
+            characterStates[win.id].lastFloorY = bounds.bounds.y + (!winIsFullscreen ? bounds.workAreaSize.height : bounds.size.height)
+            characterStates[win.id].lastRoofY = bounds.bounds.y
+        }   
     }
 
     // If window is removed or being dragged, disable collision and unnecessary void detection
@@ -1266,7 +1266,9 @@ function setCollision(win) {
                 characterStates[win.id].v_speed_x *= -(characterStates[win.id].isBouncing || !characterStates[win.id].isFalling) * (!characterStates[win.id].isFalling || bounciness);
                 characterStates[win.id].direction = 'left';
                 characterStates[win.id].dx = (-(characterStates[win.id].isBouncing || !characterStates[win.id].isFalling) * characterStates[win.id].scale * characterStates[win.id].speed * (!characterStates[win.id].isFalling || bounciness))
-                win.setPosition(characterStates[win.id].lastRightWall - winWidth, y);
+                console.log("WHAT THE FUCK1", characterStates[win.id].lastRoofY, win.getPosition())
+                win.setPosition(characterStates[win.id].lastRightWall - winWidth, Math.max(characterStates[win.id].lastRoofY, y));
+                console.log("WHAT THE FUCK2", characterStates[win.id].lastRoofY, win.getPosition())
                 if (characterStates[win.id].lastEvent && characterStates[win.id].state != 'view' && !characterStates[win.id].isFalling && !characterStates[win.id].isReleased) {
                     characterStates[win.id].lastEvent.sender.send('channel1', 'walk-' + (characterStates[win.id].direction === 'right' ? 'r' : 'l'));
                 }
@@ -1289,7 +1291,7 @@ function setCollision(win) {
                 characterStates[win.id].v_speed_x = Math.abs(characterStates[win.id].v_speed_x) * (characterStates[win.id].isBouncing || !characterStates[win.id].isFalling) * (!characterStates[win.id].isFalling || bounciness);
                 characterStates[win.id].direction = 'right';
                 characterStates[win.id].dx = ((characterStates[win.id].isBouncing || !characterStates[win.id].isFalling) * characterStates[win.id].scale * characterStates[win.id].speed * (!characterStates[win.id].isFalling || bounciness));
-                win.setPosition(characterStates[win.id].lastLeftWall, y);
+                win.setPosition(characterStates[win.id].lastLeftWall, Math.max(characterStates[win.id].lastRoofY, y));
                 if (characterStates[win.id].lastEvent && characterStates[win.id].state != 'view' && !characterStates[win.id].isFalling && !characterStates[win.id].isReleased) {
                     characterStates[win.id].lastEvent.sender.send('channel1', 'walk-' + (characterStates[win.id].direction === 'right' ? 'r' : 'l'));
                 }
@@ -1331,7 +1333,7 @@ function setCollision(win) {
                 characterStates[win.id].v_speed_y *= -1;
             }
         }
-        
+
         if (x + winWidth > width) { // Right
             characterStates[win.id].direction = 'left';
             characterStates[win.id].dx = (-1 * characterStates[win.id].scale * characterStates[win.id].speed);
