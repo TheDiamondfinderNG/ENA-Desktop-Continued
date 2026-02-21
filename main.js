@@ -3,7 +3,8 @@ const { setActions } = require('./actions');
 const { setPhysics } = require('./physics');
 const { getRandomNumber, getRandomInteger } = require('./utils');
 const { characterStates } = require('./States.js');
-const activeWin = require('active-win');
+//const activeWin = require('active-win');
+//breaks on linux. big whoop.
 const path = require('path');
 const fs = require('fs');
 const isSecondInstance = app.requestSingleInstanceLock();
@@ -684,7 +685,8 @@ const win_config = {
     minHeight: 290,
     frame: false,
     titleBarStyle: "hidden",
-    icon: nativeImage.createFromPath(path.join(__dirname, "img/icon.ico")),
+    icon: nativeImage.createFromPath(path.join(__dirname, "img/icon.app.png")),
+    //once again, linux. Cinnamon and/or similar does not like .ico files, so a .png will do.
     titleBarOverlay: { color: "#181818", symbolColor: "#fff", height: 34 },
     backgroundColor: "#181818",
     webPreferences: {
@@ -714,7 +716,8 @@ app.on('window-all-closed', function (e) {
 });
 
 function createTray() {
-    tray = new Tray(path.join(__dirname, 'img/icon.ico'));
+    tray = new Tray(path.join(__dirname, 'img/icon.app.png'));
+    //go see line 689 for why it's the same here. ".ico" is evil on Linux, i guess.
     tray.setToolTip('Desktop ENA');
     tray.setContextMenu(contextMenu);
     tray.on('click', () => {
@@ -1135,7 +1138,7 @@ async function update(delta, win) {
     characterStates[win.id].dragPos.newY = y;
 
     // Get active window title name
-    const window = await activeWin();
+    const window = await activeWin(); //nasty error in these pile-ups. I'm guessing it's also an issue, but I am no wizard of JavaScript.
     let display = screen.getPrimaryDisplay();
     let { width, height } = display.size;
     if (window != undefined) {
@@ -1859,11 +1862,12 @@ function createShimejiWindow(options) {
 
     characterStates[win.id] = createCharacterState(options);
 
-    win.hookWindowMessage(WM_INITMENU, () => {
+    /* win.hookWindowMessage(WM_INITMENU, () => {
         win.setEnabled(false);
         win.setEnabled(true);
         characterStates[win.id].menu.popup();
-    });
+    }); */
+    //I don't think *you* exist anymore...
 
     win.webContents.on('before-input-event', (e, input) => {
         if ((input.control && ((input.shift && input.key === 'I') || input.key === 'r')) && !devMode) {
