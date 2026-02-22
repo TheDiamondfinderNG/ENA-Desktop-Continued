@@ -1,10 +1,11 @@
 const { app, screen, ipcMain, dialog, shell, Menu, Tray, nativeImage, BrowserWindow } = require('electron');
+const os = require('os');
+const platform = os.platform()
 const { setActions } = require('./actions');
 const { setPhysics } = require('./physics');
 const { getRandomNumber, getRandomInteger } = require('./utils');
 const { characterStates } = require('./States.js');
-//const activeWin = require('active-win');
-//breaks on linux. big whoop.
+const activeWin = require('active-win');
 const path = require('path');
 const fs = require('fs');
 const isSecondInstance = app.requestSingleInstanceLock();
@@ -685,8 +686,7 @@ const win_config = {
     minHeight: 290,
     frame: false,
     titleBarStyle: "hidden",
-    icon: nativeImage.createFromPath(path.join(__dirname, "img/icon.app.png")),
-    //once again, linux. Cinnamon and/or similar does not like .ico files, so a .png will do.
+    icon: nativeImage.createFromPath(path.join(__dirname, platform == "win32" ? "img/icon.app.png" : "img/icon.ico")),
     titleBarOverlay: { color: "#181818", symbolColor: "#fff", height: 34 },
     backgroundColor: "#181818",
     webPreferences: {
@@ -1138,7 +1138,7 @@ async function update(delta, win) {
     characterStates[win.id].dragPos.newY = y;
 
     // Get active window title name
-    const window = await activeWin(); //nasty error in these pile-ups. I'm guessing it's also an issue, but I am no wizard of JavaScript.
+    const window = await activeWin();
     let display = screen.getPrimaryDisplay();
     let { width, height } = display.size;
     if (window != undefined) {
@@ -1240,7 +1240,7 @@ function setCollision(win) {
             characterStates[win.id].lastRightWall = bounds.bounds.x + bounds.bounds.width
             characterStates[win.id].lastFloorY = bounds.bounds.y + (!winIsFullscreen ? bounds.workAreaSize.height : bounds.size.height)
             characterStates[win.id].lastRoofY = bounds.bounds.y
-        }   
+        }
     }
 
     // If window is removed or being dragged, disable collision and unnecessary void detection
@@ -1862,12 +1862,12 @@ function createShimejiWindow(options) {
 
     characterStates[win.id] = createCharacterState(options);
 
-    /* win.hookWindowMessage(WM_INITMENU, () => {
+    if(platform == "win32")
+    win.hookWindowMessage(WM_INITMENU, () => {
         win.setEnabled(false);
         win.setEnabled(true);
         characterStates[win.id].menu.popup();
-    }); */
-    //I don't think *you* exist anymore...
+    });
 
     win.webContents.on('before-input-event', (e, input) => {
         if ((input.control && ((input.shift && input.key === 'I') || input.key === 'r')) && !devMode) {
