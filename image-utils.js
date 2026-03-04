@@ -6,17 +6,19 @@ class ImageUtils {
     }
     loadImages(sources) {
         return new Promise((resolve, reject) => {
+            function logLoad(self, nb) {
+                self.loaded++
+                if (self.loaded === nb) {
+                    resolve(self.imgs);
+                }
+            }
             const nb = Object.keys(sources).length;
-            if(nb == 0) resolve({})
+            if (nb == 0) resolve({})
             for (let i in sources) {
                 this.imgs[i] = new Image();
                 this.imgs[i].src = sources[i];
-                this.imgs[i].onload = () => {
-                    this.loaded++;
-                    if (this.loaded === nb) {
-                        resolve(this.imgs);
-                    }
-                };
+                if (this.imgs[i].complete) logLoad(this, nb)
+                else this.imgs[i].onload = ()=>{logLoad(this, nb)}
                 this.imgs[i].onerror = () => {
                     reject(`Error al cargar la imagen: ${sources[i]}`);
                 };

@@ -22,6 +22,7 @@ class AnimateUtils {
                 store: null,
                 w: 11,
                 h: 3,
+                offsets: Array(26).fill([0, 0]),
                 characters: []
             },
             accessory: {
@@ -129,6 +130,13 @@ class AnimateUtils {
             .then(response => response.json())
             .then(data => {
                 this.store_coords.eye.image = eyes;
+                console.log(options)
+                this.store_coords.eye = {
+                    ...this.store_coords.eye,
+                    w: (options.blinkSize && options.blinkSize.w) || 11,
+                    h: (options.blinkSize && options.blinkSize.h) || 3,
+                    offsets: options.blinkOffsets || Array(26).fill([0, 0]),
+                }
 
                 if (this.store_characters[name] == null) {
                     this.store_characters[name] = { image: image };
@@ -142,7 +150,7 @@ class AnimateUtils {
                 if (this.store_coords.eye.characters[name] == null) {
                     this.store_coords.eye.characters[name] = {
                         index: data.eyes_index,
-                        coord: data.eyes.map(([x, y]) => [x + diffW, y + diffH])
+                        coord: data.eyes.map(([x, y], i) => [x + diffW + this.store_coords.eye.offsets[i][0], y + diffH + this.store_coords.eye.offsets[i][1]])
                     };
                 }
 
@@ -170,7 +178,7 @@ class AnimateUtils {
             self.store_accessories[key] = { image: accessories[key] };
         });
     }
-    setAccessory = function(name) {
+    setAccessory = function (name) {
         let character = this.findCharacter(this.name);
         var c = document.createElement('canvas');
         var ctx = c.getContext("2d");
@@ -329,7 +337,7 @@ class AnimateUtils {
             // Update Clone Data
             // this.addClone(this.name);
             // Draw Character
-            let {offsetX, offsetY} = this.findAnimation(character.activeAnimation).frames[character.state.animationFrame]
+            let { offsetX, offsetY } = this.findAnimation(character.activeAnimation).frames[character.state.animationFrame]
             if (this.username != null) {
                 this.drawOutline(character.canvas, offsetX * character.w, offsetY * character.h, character.w, character.h, (400 / 2) - ((character.w / 2) * this.scale), (400 / 2) - ((character.h / 2) * this.scale), character.w * this.scale, character.h * this.scale);
             } else {
@@ -343,10 +351,30 @@ class AnimateUtils {
             if (character.canvas2 != null && character.blink && !character.activeAnimation.includes("init-fall-") && this.findAnimation(character.eyesClosed ? 'closed-eyes' : 'blinking').frames[character.state.blinkFrame].offsetX === 1) {
                 if (this.username != null) {
                     // manage.html
-                    this.context.drawImage(character.canvas2, this.store_coords.eye.characters[character.name].index * this.store_coords.eye.w, this.findAnimation(character.activeAnimation).direction ? this.store_coords.eye.h : 0, this.store_coords.eye.w, this.store_coords.eye.h, (400 / 2) - ((character.w / 2) * this.scale) + (this.store_coords.eye.characters[character.name].coord[offsetX + (offsetY * 10)][0] * this.scale), (400 / 2) - ((character.h / 2) * this.scale) + (this.store_coords.eye.characters[character.name].coord[offsetX + (offsetY * 10)][1] * this.scale), this.store_coords.eye.w * this.scale, this.store_coords.eye.h * this.scale);
+                    this.context.drawImage(
+                        character.canvas2,
+                        this.store_coords.eye.characters[character.name].index * this.store_coords.eye.w,
+                        this.findAnimation(character.activeAnimation).direction ? this.store_coords.eye.h : 0,
+                        this.store_coords.eye.w,
+                        this.store_coords.eye.h,
+                        (400 / 2) - ((character.w / 2) * this.scale) + (this.store_coords.eye.characters[character.name].coord[offsetX + (offsetY * 10)][0] * this.scale),
+                        (400 / 2) - ((character.h / 2) * this.scale) + (this.store_coords.eye.characters[character.name].coord[offsetX + (offsetY * 10)][1] * this.scale),
+                        this.store_coords.eye.w * this.scale,
+                        this.store_coords.eye.h * this.scale
+                    );
                 } else {
                     // index.html
-                    this.context.drawImage(character.canvas2, this.store_coords.eye.characters[character.name].index * this.store_coords.eye.w, this.findAnimation(character.activeAnimation).direction ? this.store_coords.eye.h : 0, this.store_coords.eye.w, this.store_coords.eye.h, (character.x * this.scale) + (this.store_coords.eye.characters[character.name].coord[offsetX + (offsetY * 10)][0] * this.scale), (character.y * this.scale) + (this.store_coords.eye.characters[character.name].coord[offsetX + (offsetY * 10)][1] * this.scale), this.store_coords.eye.w * this.scale, this.store_coords.eye.h * this.scale);
+                    this.context.drawImage(
+                        character.canvas2,
+                        this.store_coords.eye.characters[character.name].index * this.store_coords.eye.w,
+                        this.findAnimation(character.activeAnimation).direction ? this.store_coords.eye.h : 0,
+                        this.store_coords.eye.w,
+                        this.store_coords.eye.h,
+                        (character.x * this.scale) + (this.store_coords.eye.characters[character.name].coord[offsetX + (offsetY * 10)][0] * this.scale),
+                        (character.y * this.scale) + (this.store_coords.eye.characters[character.name].coord[offsetX + (offsetY * 10)][1] * this.scale),
+                        this.store_coords.eye.w * this.scale,
+                        this.store_coords.eye.h * this.scale
+                    );
                 }
             }
             // This will animate the character

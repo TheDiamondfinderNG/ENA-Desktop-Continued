@@ -1,4 +1,5 @@
 const { app, screen, ipcMain, dialog, shell, Menu, Tray, nativeImage, BrowserWindow } = require('electron');
+const os = require('os');
 const { setActions } = require('./actions');
 const { setPhysics } = require('./physics');
 const { getRandomNumber, getRandomInteger } = require('./utils');
@@ -15,6 +16,7 @@ if (!isSecondInstance) { // Close the new instance if one is already running
     app.quit();
 }
 
+let platform = os.platform()
 
 // We enable the following commands to fix the DPI (Scaled Screen)
 app.commandLine.appendSwitch('high-dpi-support', 'true');
@@ -341,6 +343,7 @@ ipcMain.on('stop-drag', (event) => {
 ipcMain.on('pet', (event, petAmount) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     const shimejiStates = characterStates[win.id];
+    if (shimejiStates == undefined) return
     shimejiStates.dx = 0
     shimejiStates.lastEvent.sender.send('setClosedEyes', petAmount > 200);
     if (petAmount > 400) {
@@ -824,6 +827,8 @@ function updateTray() {
                 primaryColor: character.primary_color ?? undefined,
                 secondaryColor: character.secondary_color ?? undefined,
                 hueShift: character.hueShift ?? [0, 0, 0],
+                blinkOffsets: character.blinkOffsets,
+                blinkSize: character.blinkSize,
                 darknessOffset: character.darknessOffset ?? [0.85, 1.45, 1.60],
                 frameWidth: character.width ?? 36,
                 frameHeight: character.height ?? 52
@@ -849,6 +854,7 @@ function updateTray() {
                     primaryColor: character.primary_color ?? undefined,
                     secondaryColor: character.secondary_color ?? undefined,
                     hueShift: character.hueShift ?? [0, 0, 0],
+                    blinkOffsets: character.blinkOffsets,
                     darknessOffset: character.darknessOffset ?? [0.85, 1.45, 1.60],
                     frameWidth: character.width ?? 36,
                     frameHeight: character.height ?? 52
@@ -1525,6 +1531,7 @@ function buildMenu(win) {
                 primaryColor: character.primary_color ?? undefined,
                 secondaryColor: character.secondary_color ?? undefined,
                 hueShift: character.hueShift ?? [0, 0, 0],
+                blinkOffsets: character.blinkOffsets,
                 darknessOffset: character.darknessOffset ?? [0.85, 1.45, 1.60],
                 frameWidth: character.width ?? 36,
                 frameHeight: character.height ?? 52
@@ -1567,6 +1574,7 @@ function buildMenu(win) {
                 primaryColor: character.primary_color ?? undefined,
                 secondaryColor: character.secondary_color ?? undefined,
                 hueShift: character.hueShift ?? [0, 0, 0],
+                blinkOffsets: character.blinkOffsets,
                 darknessOffset: character.darknessOffset ?? [0.85, 1.45, 1.60],
                 frameWidth: character.width ?? 36,
                 frameHeight: character.height ?? 52
@@ -1760,6 +1768,7 @@ function createCharacterState(options) {
         tertiary: options.characterId ? characterStates[options.characterId].tertiary : (options.tertiaryColor ?? '#2c5bf5'),
         quaternary: options.characterId ? characterStates[options.characterId].quaternary : (options.quaternaryColor ?? '#ffe308'),
         hueShift: options.hueShift ?? [0, 0, 0],
+        blinkOffsets: options.blinkOffsets,
         darknessOffset: options.darknessOffset ?? [0.85, 1.45, 1.60],
         v_speed_x: 0,
         v_speed_y: 0,
@@ -1835,7 +1844,7 @@ function createShimejiWindow(options) {
         minWidth: (options.frameWidth * currentScale),
         minHeight: (options.frameHeight * currentScale),
         x: centerX + getRandomInteger(-100, 100),
-        y: 0,
+        y: getRandomInteger(-10, 10),
         show: !currentHide,
         titleBarOverlay: null,
         backgroundColor: null,
@@ -1859,11 +1868,12 @@ function createShimejiWindow(options) {
 
     characterStates[win.id] = createCharacterState(options);
 
-    win.hookWindowMessage(WM_INITMENU, () => {
-        win.setEnabled(false);
-        win.setEnabled(true);
-        characterStates[win.id].menu.popup();
-    });
+    if (platform == "win32")
+        win.hookWindowMessage(WM_INITMENU, () => {
+            win.setEnabled(false);
+            win.setEnabled(true);
+            characterStates[win.id].menu.popup();
+        });
 
     win.webContents.on('before-input-event', (e, input) => {
         if ((input.control && ((input.shift && input.key === 'I') || input.key === 'r')) && !devMode) {
@@ -1886,6 +1896,7 @@ function createShimejiWindow(options) {
             tertiary: state.tertiary,
             quaternary: state.quaternary,
             hueShift: state.hueShift,
+            blinkOffsets: state.blinkOffsets,
             darknessOffset: state.darknessOffset
         };
 

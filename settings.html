@@ -309,7 +309,9 @@
 																		</slider-bar><br />
 																		<div class="warning box-warning"
 																			style="display: none;">
-																			WARNING: They are invisible, which in itself isn't a bad thing when disabled. Hiding them would be more resource friendly </div>
+																			WARNING: They are invisible, which in itself
+																			isn't a bad thing when disabled. Hiding them
+																			would be more resource friendly </div>
 																	</div>
 																</div>
 															</div>
@@ -387,7 +389,7 @@
 																		<button class="btn btn-lg btn-default btn-dark"
 																			onclick="zipTemplateExport(true)">Download
 																			Accessory
-																			Template</button>
+																			Templates</button>
 																		<button class="btn btn-lg btn-default btn-dark"
 																			onclick="shell.openPath(accessoryLocation+'config.json')">Open
 																			Accessory config</button>
@@ -401,7 +403,7 @@
 														</div>
 														<footer class="text-muted text-nowrap">
 															<div class="app-version">version <b class="me-2">v1.1.0
-																	BETA (build 2)
+																	BETA (build 3)
 																	<strong>(Community Continued)</strong></b></div>
 															<div class="text-end">
 																<div class="d-flex flex-wrap">
@@ -624,7 +626,6 @@
 			let redo = true
 			while (redo)
 				for (let accessory in accessories) {
-					console.log(accessory, key)
 					redo = false
 					if (accessory == key) {
 						let sourceAuthor = (config.author ? accessories[accessory].author.name || accessories[accessory].author : "uncredited").replace(/\n/g, " ")
@@ -667,8 +668,8 @@
 			const lastUploaded = importBox.querySelector("h4")
 			let fileNames = []
 			let filePaths = []
-			tempConfig = fs.existsSync("../imports/characters/config.json") ? JSON.parse(fs.readFileSync("../imports/characters/config.json")) : []
-			tempAccessories = fs.existsSync("../imports/accessories/config.json") ? JSON.parse(fs.readFileSync("../imports/accessories/config.json")) : {}
+			tempConfig = fs.existsSync(__dirname + "/../imports/characters/config.json") ? JSON.parse(fs.readFileSync(__dirname + "/../imports/characters/config.json")) : []
+			tempAccessories = fs.existsSync(__dirname + "/../imports/accessories/config.json") ? JSON.parse(fs.readFileSync(__dirname + "/../imports/accessories/config.json")) : {}
 
 			for (let file of files) {
 				fileNames.push(file.name)
@@ -724,14 +725,20 @@
 		function zipTemplateExport(isAccessory = false) {
 			let exportZip = new JSzip()
 			if (isAccessory) {
-				let accessory = {
+				let accessory =
+				{
 					"Boring color blocks": {
 						"path": "color_blocks.png",
-						"author": "DiamondNG"
+						"author": { "name": "DiamondNG", "color": 29 }
+					},
+					"ENA Plushie": {
+						"path": "Ena_accessory.png"
 					}
 				}
+
 				exportZip.file("accessories.json", JSON.stringify(accessory, null, 4))
 				exportZip.file(accessory["Boring color blocks"].path, new Uint8Array(Buffer.from("iVBORw0KGgoAAAANSUhEUgAAACgAAAAuBAMAAACoiUZDAAAAD1BMVEUeADAA//8Aubn/AP+5ALkkvW1TAAAAjUlEQVQoz+2NsQ3FMAhEzzYDxBtYTBCJBVKw/0w57G+6nyJ1Doni6XEALafkwGCNOQ0dvTBHRyPChIUIC1qmZ+J8NpqtvrI7YSdNdB4ScYfVJgzneOj84GsIvwQi4g4dFbVWVSCQwwkDKXRC2Satn+kZzbAzCiDrfNkBOZfPRxp47EcBwxk0x5/OD76FN+bsgARt8NVpAAAAAElFTkSuQmCC", "base64")))
+				exportZip.file(accessory["ENA Plushie"].path, new Uint8Array(fs.readFileSync(path.join(__dirname, "img/accessory/Ena_accessory.png"))))
 			} else {
 				let character = {
 					"name": "ENA",
@@ -770,18 +777,29 @@
 					})
 				.then(
 					async function (zip) {
-						let zipFiles = zip.files
+						let initZipFiles = zip.files
+						let initValues = Object.values(initZipFiles)
+						let zipFiles = {}
+						if (initValues[0].dir)
+							for (let i in initZipFiles) {
+								if (i == initValues[0].name) continue
+								let key = i.replace(initValues[0].name, "")
+								zipFiles[key] = initZipFiles[i]
+								zipFiles[key].name = key
+							}
+						else
+							zipFiles = initZipFiles
+						console.log(zipFiles, initValues[0].dir)
 						let accessoryConfig
 						if (zipFiles["accessories.json"]) {
 							accessoryConfig = JSON.parse(Buffer.from(await (await zipFiles["accessories.json"].async("blob")).arrayBuffer()).toString())
-							console.log("ACCESSORIES", tempAccessories)
+
 							for (let accessory in accessoryConfig) {
 								let accessoryValue = accessoryConfig[accessory]
 								let oldAccessoryValue = { ...accessoryValue }
 								let originalPath = accessory.path || accessory,
 									dupeCheckResults = checkAccessoryDupes(tempAccessories, accessoryValue, accessory)
 								if (dupeCheckResults.newKey != accessory) {
-									console.log(dupeCheckResults.value)
 									zipFiles[dupeCheckResults.value.path || dupeCheckResults.value] = zipFiles[oldAccessoryValue.path || oldAccessoryValue]
 									zipFiles[dupeCheckResults.value.path || dupeCheckResults.value].name = dupeCheckResults.value.path || dupeCheckResults.value
 									delete zipFiles[oldAccessoryValue.path || oldAccessoryValue]
@@ -797,7 +815,6 @@
 										fs.mkdirSync(filePath)
 									} catch (err) { console.warn(err) }
 								}
-								console.log(zipFiles[accessoryValue.path || accessoryValue])
 								zipFiles[accessoryValue.path || accessoryValue].async("blob")
 									.then(x => x.arrayBuffer())
 									.then(async fileBuffer => {
@@ -807,7 +824,7 @@
 									})
 								delete zipFiles[accessoryValue.path || accessoryValue]
 							}
-							fs.writeFileSync("../imports/accessories/config.json", JSON.stringify(tempAccessories, null, 4))
+							fs.writeFileSync(__dirname + "/../imports/accessories/config.json", JSON.stringify(tempAccessories, null, 4))
 							delete zipFiles["accessories.json"]
 						}
 						if (zipFiles["config.json"]) {
@@ -851,7 +868,7 @@
 									tempConfig.unshift(character)
 								}
 								tempConfig.sort(alphabetSort)
-								fs.writeFileSync("../imports/characters/config.json", JSON.stringify(tempConfig, null, 4))
+								fs.writeFileSync(__dirname + "/../imports/characters/config.json", JSON.stringify(tempConfig, null, 4))
 							} else {
 								let { sprite_path, blink_path, icon } = characterConfig
 								let result = checkCharacterDupes(tempConfig, characterConfig)
@@ -886,7 +903,7 @@
 								characterConfig = result.value
 								tempConfig.unshift(characterConfig)
 								tempConfig.sort(alphabetSort)
-								fs.writeFileSync("../imports/characters/config.json", JSON.stringify(tempConfig, null, 4))
+								fs.writeFileSync(__dirname + "/../imports/characters/config.json", JSON.stringify(tempConfig, null, 4))
 							}
 							delete zipFiles["config.json"]
 						} else if (!accessoryConfig) {
@@ -1138,7 +1155,7 @@
 				clone.innerText += "The icon is defined, but doesn't lead to anywhere"
 				errorClones.push(clone)
 			}
-			if (character.blink_offsets || character.anims || character.resolution || character.accessory_offsets || character.back_sprite) {
+			if (character.anims || character.resolution || character.accessory_offsets || character.back_sprite) {
 				clone = slotWarn.cloneNode(true)
 				clone.innerText += "This sprite is using major features that do not exist yet, which will likely cause problems. If possible, update to the latest version"
 				errorClones.push(clone)
@@ -1156,7 +1173,7 @@
 					return
 
 				characterArray.splice(characterArray.indexOf(character), 1)
-				fs.writeFile("../imports/characters/config.json", JSON.stringify(characterArray, null, 4), (x) => {
+				fs.writeFile(__dirname + "/../imports/characters/config.json", JSON.stringify(characterArray, null, 4), (x) => {
 					ipcRenderer.send("update-menus")
 					updateSlots()
 				})
@@ -1238,7 +1255,7 @@
 					return
 
 				delete accessoryObject[key]
-				fs.writeFile("../imports/accessories/config.json", JSON.stringify(accessoryObject, null, 4), (x) => {
+				fs.writeFile(__dirname + "/../imports/accessories/config.json", JSON.stringify(accessoryObject, null, 4), (x) => {
 					ipcRenderer.send("update-menus")
 					updateSlots()
 				})

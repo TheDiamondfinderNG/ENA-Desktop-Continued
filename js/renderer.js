@@ -364,7 +364,6 @@ characters.addEventListener('change', (event) => {
         for (let accessoryId in flatAccessories) {
             sprites[accessoryId] = flatAccessories[accessoryId].path || flatAccessories[accessoryId]
         }
-        console.log(flatAccessories)
         const imageUtils_2 = new ImageUtils();
         imageUtils_2.loadImages(sprites).then((imgs) => {
             var acc = {}
@@ -396,6 +395,8 @@ characters.addEventListener('change', (event) => {
                 tertiary: characterStates.tertiary,
                 quaternary: characterStates.quaternary,
                 hueShift: characterStates.hueShift,
+                blinkOffsets: characterStates.blinkOffsets,
+                blinkSize: characterStates.blinkSize,
                 darknessOffset: characterStates.darknessOffset,
             }, characterStates.custom, 'db/');
             paused = false;
