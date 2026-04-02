@@ -250,6 +250,23 @@ document.querySelector('#accessory').addEventListener('change', (event) => {
     characterPreview.setAccessory(document.querySelector('#accessory').value, [document.querySelector('.tertiary-color-value').value, document.querySelector('.quaternary-color-value').value]);
 });
 
+let inputs = "xxx"
+onkeypress = e => {
+    inputs += e.key
+    inputs = inputs.slice(-3)
+    if (inputs == ":3c") {
+        document.querySelector('#debug').style.display = ""
+        onkeypress = null
+    }
+}
+
+document.querySelector('#highlight').addEventListener('click', (event) => {
+    let id = characters.value;
+    if (id != -1) {
+        ipcRenderer.send('update-highlight', id)
+    }
+});
+
 let wakeLock = null;
 
 const requestWakeLock = async () => {

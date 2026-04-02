@@ -46,7 +46,8 @@
         let petAmount = 0;
         let petDecay = 5;
         let petStrength = 2;
-        let transparency = 1
+        let transparency = 1;
+        let highlighted = false;
         let deltaStart = performance.now();
         let deltaEnd = performance.now();
         let delta = deltaEnd - deltaStart
@@ -187,6 +188,11 @@
 
         window.api.receive('setPetDecay', (num) => {
             petDecay = num;
+        });
+
+        window.api.receive('highlight', () => {
+            highlighted = !highlighted
+            document.body.style.background = highlighted ? "#F00" : ""
         });
 
         window.api.receive('setTransparency', (num) => {

@@ -315,6 +315,23 @@
 																	</div>
 																</div>
 															</div>
+															<div class="settings-section" id="debug">
+																<h4>DEBUGGING</h4>
+																<hr>
+																<div class="row form-group">
+																	<label class="col-sm-4 col-form-label"
+																		title="Highlight all the ENAs active, including ones that aren't visible">
+																		Hightlight ENAS
+																	</label>
+																	<div class="col-sm-8">
+																		<div class="input-group-append">
+																			<input type="button" id="highlight"
+																				class="btn" value="Toggle all">
+																		</div>
+																	</div>
+																</div>
+
+															</div>
 															<form style="text-align: center;">
 																<label for="file"
 																	style="cursor: pointer;display: block;background: #121212;border: #0D0D0D dashed 6px;border-radius: 1.5em;padding: 2rem;margin: 1rem 0.5em;"><fa-icon
@@ -403,7 +420,7 @@
 														</div>
 														<footer class="text-muted text-nowrap">
 															<div class="app-version">version <b class="me-2">v1.1.0
-																	BETA (build 3)
+																	BETA (build 4)
 																	<strong>(Community Continued)</strong></b></div>
 															<div class="text-end">
 																<div class="d-flex flex-wrap">
@@ -446,11 +463,26 @@
 			floorLockDist = document.querySelector("#floor-lock-dist"),
 			petStrength = document.querySelector("#strengthnumber"),
 			petDecay = document.querySelector("#decaynumber"),
+			debugSection = document.querySelector("#debug"),
 			bounciness = document.querySelector("#bouncinessnumber"),
+			highlightToggle = document.querySelector("#highlight"),
 			transparency = document.querySelector("#transparencynumber"),
 			inactiveTransparency = document.querySelector("#inactivetransparencynumber"),
 			fileUpload = document.querySelector("#file"),
 			importBox = fileUpload.labels[0]
+
+
+		debugSection.style.display = "none"
+		let inputs = "xxx"
+		onkeypress = e => {
+			inputs += e.key
+			inputs = inputs.slice(-3)
+			if (inputs == ":3c") {
+				debugSection.style.display = ""
+				onkeypress = null
+			}
+		}
+
 		function initValues() {
 			let settings = ipcRenderer.sendSync("reload-preferences")
 			monitorLock.checked = ipcRenderer.sendSync("get-monitor-lock")
@@ -496,6 +528,9 @@
 			initValues()
 		}
 
+		highlightToggle.onclick = () => {
+			ipcRenderer.send("update-highlight")
+		}
 		floorLock.onchange = () => {
 			document.querySelector("#floor-lock-dist-wrapper").style.display = floorLock.value == 1 ? "contents" : "none"
 		}

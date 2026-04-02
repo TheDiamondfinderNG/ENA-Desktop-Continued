@@ -5,10 +5,12 @@ class ImageUtils {
         this.imgs = {};
     }
     loadImages(sources) {
+        let loadedImages = 0
         return new Promise((resolve, reject) => {
             function logLoad(self, nb) {
                 self.loaded++
-                if (self.loaded === nb) {
+                loadedImages++
+                if (loadedImages === nb) {
                     resolve(self.imgs);
                 }
             }

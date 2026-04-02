@@ -130,7 +130,6 @@ class AnimateUtils {
             .then(response => response.json())
             .then(data => {
                 this.store_coords.eye.image = eyes;
-                console.log(options)
                 this.store_coords.eye = {
                     ...this.store_coords.eye,
                     w: (options.blinkSize && options.blinkSize.w) || 11,

@@ -481,6 +481,17 @@ ipcMain.on('update-transparency', (event, val) => {
     }
 });
 
+ipcMain.on('update-highlight', (event, id = -1) => {
+    if (id == -1) {
+        for (const character in characterStates) {
+            characterStates[character].lastEvent.sender.send('highlight');
+        }
+    }
+    else {
+        characterStates[id].lastEvent.sender.send("highlight")
+    }
+});
+
 ipcMain.on('get-transparency', (event) => {
     for (const character in characterStates) {
         characterStates[character].lastEvent.sender.send('setTransparency', currentIgnore ? inactiveTransparency : transparency);
@@ -707,6 +718,50 @@ function createBrowserWindow(options) {
     return new BrowserWindow(windowOptions);
 }
 
+/**
+ * Opens or focuses the settings 
+ * @returns null
+ */
+function openSettings() {
+    if (settings) {
+        settings.focus();
+        return;
+    }
+    settings = createBrowserWindow();
+
+    settings.setFullScreenable(false);
+    settings.webContents.on('before-input-event', (e, input) => {
+        if ((input.control && input.shift && input.key === 'I') && !devMode) {
+            e.preventDefault(); // Disabled DevTools
+        }
+    });
+
+    settings.once('ready-to-show', () => {
+        settings.maximize();
+    });
+
+    settings.loadFile('manage.html');
+
+    settings.on('resize', () => {
+        let size = settings.getSize();
+        settings.webContents.send('window-size', size);
+    });
+
+    settings.on('focus', () => {
+        settings.setTitleBarOverlay({ color: '#181818', symbolColor: '#ffffff' });
+    });
+
+    settings.on('blur', () => {
+        settings.setTitleBarOverlay({ color: '#1f1f1f', symbolColor: '#9d9d9d' });
+    });
+
+    settings.on('closed', () => {
+        settings = null;
+    });
+
+}
+
+
 app.on('ready', () => {
     loadSave()
     onInit();
@@ -720,43 +775,7 @@ function createTray() {
     tray = new Tray(path.join(__dirname, 'img/icon.ico'));
     tray.setToolTip('Desktop ENA');
     tray.setContextMenu(contextMenu);
-    tray.on('click', () => {
-        if (settings) {
-            settings.focus();
-            return;
-        }
-        settings = createBrowserWindow();
-
-        settings.setFullScreenable(false); // Disable Fullscreen
-        settings.webContents.on('before-input-event', (e, input) => {
-            if ((input.control && input.shift && input.key === 'I') && !devMode) {
-                e.preventDefault(); // Disabled DevTool
-            }
-        });
-
-        settings.once('ready-to-show', () => {
-            settings.maximize();
-        });
-
-        settings.loadFile('manage.html');
-
-        settings.on('resize', () => {
-            let size = settings.getSize();
-            settings.webContents.send('window-size', size);
-        });
-
-        settings.on('focus', () => {
-            settings.setTitleBarOverlay({ color: '#181818', symbolColor: '#ffffff' });
-        });
-
-        settings.on('blur', () => {
-            settings.setTitleBarOverlay({ color: '#1f1f1f', symbolColor: '#9d9d9d' });
-        });
-
-        settings.on('closed', () => {
-            settings = null;
-        });
-    });
+    tray.on('click', openSettings);
 }
 
 function updateTray() {
@@ -980,43 +999,7 @@ function updateTray() {
         },
         {
             label: translations.settings,
-            click: () => {
-                if (settings) {
-                    settings.focus();
-                    return;
-                }
-                settings = createBrowserWindow();
-
-                settings.setFullScreenable(false);
-                settings.webContents.on('before-input-event', (e, input) => {
-                    if ((input.control && input.shift && input.key === 'I') && !devMode) {
-                        e.preventDefault(); // Disabled DevTools
-                    }
-                });
-
-                settings.once('ready-to-show', () => {
-                    settings.maximize();
-                });
-
-                settings.loadFile('manage.html');
-
-                settings.on('resize', () => {
-                    let size = settings.getSize();
-                    settings.webContents.send('window-size', size);
-                });
-
-                settings.on('focus', () => {
-                    settings.setTitleBarOverlay({ color: '#181818', symbolColor: '#ffffff' });
-                });
-
-                settings.on('blur', () => {
-                    settings.setTitleBarOverlay({ color: '#1f1f1f', symbolColor: '#9d9d9d' });
-                });
-
-                settings.on('closed', () => {
-                    settings = null;
-                });
-            }
+            click: openSettings
         },
         {
             type: 'separator'
@@ -1243,7 +1226,7 @@ function setCollision(win) {
             characterStates[win.id].lastRightWall = bounds.bounds.x + bounds.bounds.width
             characterStates[win.id].lastFloorY = bounds.bounds.y + (!winIsFullscreen ? bounds.workAreaSize.height : bounds.size.height)
             characterStates[win.id].lastRoofY = bounds.bounds.y
-        }   
+        }
     }
 
     // If window is removed or being dragged, disable collision and unnecessary void detection
@@ -1689,43 +1672,7 @@ function buildMenu(win) {
         { type: "separator" },
         {
             label: translations.settings,
-            click: () => {
-                if (settings) {
-                    settings.focus();
-                    return;
-                }
-                settings = createBrowserWindow();
-
-                settings.setFullScreenable(false);
-                settings.webContents.on('before-input-event', (e, input) => {
-                    if ((input.control && input.shift && input.key === 'I') && !devMode) {
-                        e.preventDefault(); // Disabled DevTools
-                    }
-                });
-
-                settings.once('ready-to-show', () => {
-                    settings.maximize();
-                });
-
-                settings.loadFile('manage.html');
-
-                settings.on('resize', () => {
-                    let size = settings.getSize();
-                    settings.webContents.send('window-size', size);
-                });
-
-                settings.on('focus', () => {
-                    settings.setTitleBarOverlay({ color: '#181818', symbolColor: '#ffffff' });
-                });
-
-                settings.on('blur', () => {
-                    settings.setTitleBarOverlay({ color: '#1f1f1f', symbolColor: '#9d9d9d' });
-                });
-
-                settings.on('closed', () => {
-                    settings = null;
-                });
-            }
+            click: openSettings
         }
     ]);
 }
